@@ -19,7 +19,7 @@ int main (void){
 	printf ("...booting up...\n");
 
 	struct sockaddr_in si_me, si_other;
-	int sockfd, i, ret, slen;
+	int sockfd, i, ret, slen, port;
 	char buf[MAX];
 	char ip_addr[INET_ADDRSTRLEN];
 
@@ -46,10 +46,11 @@ int main (void){
  		if (ret < 0){
  			die ("recvfrom()");
  		}
-
+ 		inet_ntop (AF_INET, &(si_other.sin_addr), ip_addr, INET_ADDRSTRLEN);
+ 		port = ntohs (si_other.sin_port);
  		printf ("==Received packet from %s:%d==\n%s\n", 
  				ip_addr,
- 				ntohs (si_other.sin_port), 
+ 				port, 
  				buf
  		);
 
