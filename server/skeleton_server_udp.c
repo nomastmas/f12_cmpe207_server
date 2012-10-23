@@ -42,13 +42,10 @@ int main (void){
 
  	//run forever
  	for(;;){
- 		ret = recvfrom (sockfd, buf, MAX, 0, &si_other, &slen);
+ 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&si_other, &slen);
  		if (ret < 0){
  			die ("recvfrom()");
  		}
-
- 		// store IP address in ip_addr
- 		inet_ntop (AF_INET, &(si_me.sin_addr), ip_addr, INET_ADDRSTRLEN);
 
  		printf ("==Received packet from %s:%d==\n%s\n", 
  				ip_addr,
@@ -56,7 +53,7 @@ int main (void){
  				buf
  		);
 
- 		ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockadder*) &si_other, slen);
+ 		ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)&si_other, slen);
  		if (ret < 0){
  			die ("sendto()");
  		}
