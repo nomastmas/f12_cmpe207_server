@@ -35,10 +35,10 @@ int main (int argc, char *argv[]){
 
 	slen = sizeof(si_other);
 
-	bzero(&si_other,sizeof(si_other));
-	si_other.sin_family = AF_INET;
-	si_other.sin_addr.s_addr=inet_addr(argv[1]);
-	si_other.sin_port=htons(atoi(argv[2]));
+	bzero (&si_other,sizeof(si_other));
+	si_other.sin_family 	 = AF_INET;
+	si_other.sin_addr.s_addr = inet_addr (argv[1]);		//inet_addr not recommended
+	si_other.sin_port		 = htons (atoi(argv[2]));
 
 	printf ("...booting up client...\n");
 	
