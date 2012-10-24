@@ -18,7 +18,7 @@ typedef union {
         unsigned short int dest_port;
         unsigned int       seq_num;
         unsigned int       ack_num;
-        unsigned int       data_offset : 4;
+        unsigned int       data_offset : 5; //SB:Data offset should be 5 as per 207 specification
         unsigned int       reserved    : 3;
         unsigned int       ns_flag     : 1;
         unsigned int       cwr_flag    : 1;
@@ -46,8 +46,8 @@ struct 207TcpHdr {
         unsigned long ackSeq;  		/* Acknowledgement number: 32 bits */
         
 	#  if __BYTE_ORDER == __LITTLE_ENDIAN
-        unsigned short res1:4;		/* Reserved: 4 upper bits */	
-        unsigned short dataOff:4;	/* Data Offset: 4 bits */
+        unsigned short res1:3;		/* Reserved: 3 upper bits */	
+        unsigned short dataOff:5;	/* Data Offset 207 specific: 5 bits */
         unsigned short fin:1;		/* Finish bit: 1 bit */
         unsigned short syn:1;		/* Synchronize bit: 1 bit */
         unsigned short rst:1;		/* Reset connection bit: 1 bit */
@@ -57,8 +57,8 @@ struct 207TcpHdr {
         unsigned short res2:2;		/* Reserved bits: 2 lower bits */
         
 	#  elif __BYTE_ORDER == __BIG_ENDIAN
-        unsigned short doff:4;		/* Data Offset: 4 bits */
-        unsigned short res1:4;		/* Reserved: 4 upper bits */
+        unsigned short doff:5;		/* Data Offset 207 specific: 5 bits */
+        unsigned short res1:3;		/* Reserved: 3 upper bits */
         unsigned short res2:2;		/* Reserved bits: 2 lower bits */
         unsigned short urg:1;		/* Urgent bit: 1 bit */
         unsigned short ack:1;		/* Acknowledgement bit: 1 bit */
