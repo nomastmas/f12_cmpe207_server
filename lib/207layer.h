@@ -40,9 +40,9 @@ typedef union {
 
 /* 207 TCP Header: 20 bytes  */
 struct 207TcpHdr {
-        unsigned short srcPort;     /* Source port number: 16 bit */
+        unsigned short srcPort;     	/* Source port number: 16 bit */
         unsigned short destPort;	/* Destination port number : 16 bit */
-        unsigned long seq;		    /* Sequence Number: 32 bits */
+        unsigned long seq;		/* Sequence Number: 32 bits */
         unsigned long ackSeq;  		/* Acknowledgement number: 32 bits */
         
 	#  if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -74,7 +74,7 @@ struct 207TcpHdr {
 };
 
 /*207 TCP 40 bytes header*/
-union 207TcpHdr 
+union 207TcpHdr40 
 {
 	struct 207TcpHdr 207Hdr;
 	unsigned long options[5];
