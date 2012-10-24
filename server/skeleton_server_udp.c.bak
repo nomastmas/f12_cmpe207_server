@@ -81,19 +81,18 @@ int main (void){
  	for(;;){
 		if(ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&si_other, &slen))
 		{
-			if (ret < 0){
-				die ("recvfrom()");
-			}
-
 			rw_data.fd = sockfd;
 			rw_data.buffer = buf;
 			rw_data.client = &si_other;
 			rw_data.slen = slen;
 			rw_data.ret = ret;
 
-			t_good = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
+			if((t_good = pthread_create(&t_id, NULL, rw, (void*)&rw_data))<0)
+				die ("pthread()");
 		}
- 		
+		if (ret < 0){
+			die ("recvfrom()");
+		} 		
  	}
 
  	close (sockfd);
