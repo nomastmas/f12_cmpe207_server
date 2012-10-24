@@ -1,18 +1,9 @@
-#ifndef 207LAYER_H
-#define 207LAYER_H
+#ifndef _207LAYER_H
+#define _207LAYER_H
 
 //struct union definition of packet header
 
-void die (char *s){
-	perror(s);
-	exit(1);
-}
+void die (char *s);
+void check_for_error(int ret, char* s);
 
-void check_for_error(int ret, char* s){
-	if (ret < 0){
-		die (s);
-	}
-}
-
-
-#endif
+#endif 

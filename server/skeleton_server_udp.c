@@ -8,20 +8,10 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
+#include "../lib/207layer.h"
+
 #define MAX		512
 #define PORT 	9999
-
-
-void die (char *s){
-	perror(s);
-	exit(1);
-}
-
-void check_for_error(int ret, char* s){
-	if (ret < 0){
-		die (s);
-	}
-}
 
 struct t_data{
 	int fd;

@@ -13,20 +13,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-//#include "../lib/207layer.h"
+#include "../lib/207layer.h"
 
 #define	MAX			256
-
-void die (char *s){
-	perror(s);
-	exit(1);
-}
-
-void check_for_error(int ret, char* s){
-	if (ret < 0){
-		die (s);
-	}
-}
 
 int main (int argc, char *argv[]){
 
