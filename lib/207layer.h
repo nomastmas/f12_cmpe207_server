@@ -36,6 +36,8 @@ typedef union {
 } packet_header;
 
 #if 0
+#define __BYTE_ORDER __LITTLE_ENDIAN
+
 /* 207 TCP Header: 20 bytes  */
 struct 207TcpHdr {
         unsigned short srcPort;     /* Source port number: 16 bit */
