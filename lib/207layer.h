@@ -19,7 +19,7 @@ typedef union {
         unsigned int       seq_num;
         unsigned int       ack_num;
         unsigned int       data_offset : 5; //SB:Data offset should be 5 as per 207 specification
-        unsigned int       reserved    : 3;
+        unsigned int       reserved    : 2;
         unsigned int       ns_flag     : 1;
         unsigned int       cwr_flag    : 1;
         unsigned int       ece_flag    : 1;
