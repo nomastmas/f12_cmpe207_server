@@ -35,6 +35,52 @@ typedef union {
     }__attribute__((packed));
 } packet_header;
 
+#if 0
+/* 207 TCP Header: 20 bytes  */
+struct 207TcpHdr {
+        unsigned short srcPort;     /* Source port number: 16 bit */
+        unsigned short destPort;	/* Destination port number : 16 bit */
+        unsigned long seq;		    /* Sequence Number: 32 bits */
+        unsigned long ackSeq;  		/* Acknowledgement number: 32 bits */
+        
+	#  if __BYTE_ORDER == __LITTLE_ENDIAN
+        unsigned short res1:4;		/* Reserved: 4 upper bits */	
+        unsigned short dataOff:4;	/* Data Offset: 4 bits */
+        unsigned short fin:1;		/* Finish bit: 1 bit */
+        unsigned short syn:1;		/* Synchronize bit: 1 bit */
+        unsigned short rst:1;		/* Reset connection bit: 1 bit */
+        unsigned short psh:1;		/* Push bit: 1 bit */
+        unsigned short ack:1;		/* Acknowledgement bit: 1 bit */
+        unsigned short urg:1;		/* Urgent bit: 1 bit */
+        unsigned short res2:2;		/* Reserved bits: 2 lower bits */
+        
+	#  elif __BYTE_ORDER == __BIG_ENDIAN
+        unsigned short doff:4;		/* Data Offset: 4 bits */
+        unsigned short res1:4;		/* Reserved: 4 upper bits */
+        unsigned short res2:2;		/* Reserved bits: 2 lower bits */
+        unsigned short urg:1;		/* Urgent bit: 1 bit */
+        unsigned short ack:1;		/* Acknowledgement bit: 1 bit */
+        unsigned short psh:1;		/* Push bit: 1 bit */
+        unsigned short rst:1;		/* Reset connection bit: 1 bit */
+        unsigned short syn:1;		/* Finish bit: 1 bit */
+        unsigned short fin:1;		/* Finish bit: 1 bit */
+        
+	#  endif
+        unsigned short window;  	/* Window: 16 bit */
+        unsigned short check;		/* Checksum: 16 bit */
+        unsigned short urgPtr;		/* Urgent Pointer: 16 bit */
+};
+
+/*207 TCP 40 bytes header*/
+union 207TcpHdr 
+{
+	struct 207TcpHdr 207Hdr;
+	unsigned long options[5];
+};
+
+
+#endif
+
 // client specific functions
 // int connect(int sockfd, struct sockaddr *serv_addr, int addrlen); 
 
