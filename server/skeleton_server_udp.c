@@ -28,7 +28,6 @@ struct t_data{
 
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
-void get_tcp_state (int state);
 
 enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
 
@@ -63,118 +62,95 @@ int main (void){
  	printf ("...waiting for clients...\n");
 
 	packet_header recv_header, send_header;
+
+	tcp_state = LISTEN;
  	//run forever
  	for(;;){
-
- 		switch (state){
+ 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		check_for_error (ret, "recvfrom()");
+ 		switch (tcp_state){
  			case CLOSED:
+ 				printf ("CLOSED\n");
+ 				// placeholder for our close()
+ 				close (sockfd);
  				break;
  			case LISTEN:
+ 				printf ("LISTEN\n");
 				// open for connections
  				// listen()
- 				
- 				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 				check_for_error (ret, "recvfrom()");
- 				recv_header = buf;
+ 				//recv_header = buf;
+ 				memcpy (&recv_header, &buf, sizeof (recv_header));
  				if (recv_header.syn_flag == 1){
  					// send syn + ack
  					send_header.syn_flag = 1;
  					send_header.ack_flag = 1;
  					// send (sockfd, send_header);
- 					state = SYN_RCVD;
+ 					tcp_state = SYN_RCVD;
  				}
- 				//else if (recv_header.)
+ 				else {
+ 					tcp_state = LISTEN;
+ 				}
 
 				break;
+
 			case SYN_RCVD:
-				if(flag == ACK){
-					state = ESTABLISHED;
-					printf("--ESTABLISHED--\n");
-				}
-				//close
-				//send fin
-				else
-					error = 1;
-				break;
+				printf ("SYN_RCVD\n");
+ 				memcpy (&recv_header, &buf, sizeof (recv_header));
+ 				if (recv_header.ack_flag == 1){
+ 					tcp_state = ESTABLISHED;
+ 				}
+ 				else{
+ 					//loop until recv ack
+ 					tcp_state = SYN_RCVD;
+ 				}
+ 				break;
+
 			case SYN_SENT:
-				if(flag == (SYN||ACK)){
-					state = ESTABLISHED;
-					printf("--ESTABLISHED--\n");
-					//send ack
-				}						
-				else if(flag == SYN){
-					state = SYN_RCVD;
-					printf("--SYN_RCVD--\n");
-					//send syn+ack
-				}	
-				//close -> CLOSED 
-				else
-					error = 1;
+				//work on client later
 				break;
 			case ESTABLISHED:
-				if(flag == FIN){
-					state = CLOSE_WAIT;
-					printf("--CLOSE_WAIT--\n");
-					//send ack
-				}
-				//close -> FIN_WAIT_1
-				//send fin
-				else
-					error = 1;
+				printf ("ESTABLISHED\n");
+ 				memcpy (&recv_header, &buf, sizeof (recv_header));
+ 				if (recv_header.fin_flag == 1){
+ 					send_header.ack_flag = 1;
+ 					// send (sockfd, send_header);
+ 					tcp_state = CLOSE_WAIT;
+ 				}
 				break;
 			case FIN_WAIT_1:
-				if(flag == ACK){
-					state = FIN_WAIT_2;
-					printf("--FIN_WAIT_2--\n");
-				}
-				else if(flag == FIN){
-					state = CLOSING;
-					printf("--CLOSING--\n");
-					//send ack
-				}
-				else
-					error = 1;
+
 				break;
 			case CLOSE_WAIT:
-				//close -> LAST_ACK
-				//send FIN
-				/*else
-					error = 1;*/
+				printf ("CLOSE_WAIT\n");
+				// close()
+				send_header.ack_flag = 1;
+				// send (sockfd, send_header);
+				tcp_state = LAST_ACK;
 				break;
 			case FIN_WAIT_2:
-				if(flag == FIN){
-					state = TIME_WAIT;
-					printf("--TIME_WAIT--\n");
-					//send ack
-				}
-				else
-					error = 1;
+				
 				break;
 			case CLOSING:
-				if(flag == ACK){
-					state = TIME_WAIT;
-					printf("--TIME_WAIT--\n");
-				}
-				else
-					error = 1;
+				
 				break;		
 			case LAST_ACK:
-				if(flag == ACK){
-					state = CLOSED;
-					printf("--LAST_ACK--\n");
-				}
-				else
-					error = 1;
+				printf ("LAST_ACK\n");
+ 				memcpy (&recv_header, &buf, sizeof (recv_header));
+ 				if (recv_header.ack_flag == 1){
+ 					tcp_state = CLOSED;
+ 				}
+ 				else {
+ 					tcp_state = LAST_ACK;
+ 				}
 				break;
 			case TIME_WAIT:
-				//start timer 2RTT
-				/*else
-					error = 1;*/
+				
 				break;
  		}
- 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 		check_for_error (ret, "recvfrom()");
+ 		//ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		//check_for_error (ret, "recvfrom()");
 
+ 		/*
 		rw_data.fd = sockfd;
 		rw_data.buffer = buf;
 		rw_data.client = &s_client;
@@ -183,10 +159,11 @@ int main (void){
 
 		ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
 		check_for_error(ret, "pthread_create()");
+		*/
  	}
 
  	close (sockfd);
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
  	return 0;
 }
 
@@ -235,110 +212,4 @@ void *rw(void * data){
 	
 	ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)s_client, slen);
 	check_for_error (ret, "sendto()");
-}
-
-void get_tcp_state (){
-	switch (state){
-		case CLOSED:
-			break;
-		case LISTEN:
-			if(flag == SYN){
-				state = SYN_RCVD;
-				printf("--SYN_RCVD--\n");
-				//send syn+ack
-			}
-			//send -> SYN_SENT
-			//send syn	
-			//close -> CLOSED
-			else
-				error = 1;
-			break;
-		case SYN_RCVD:
-			if(flag == ACK){
-				state = ESTABLISHED;
-				printf("--ESTABLISHED--\n");
-			}
-			//close
-			//send fin
-			else
-				error = 1;
-			break;
-		case SYN_SENT:
-			if(flag == (SYN||ACK)){
-				state = ESTABLISHED;
-				printf("--ESTABLISHED--\n");
-				//send ack
-			}						
-			else if(flag == SYN){
-				state = SYN_RCVD;
-				printf("--SYN_RCVD--\n");
-				//send syn+ack
-			}	
-			//close -> CLOSED 
-			else
-				error = 1;
-			break;
-		case ESTABLISHED:
-			if(flag == FIN){
-				state = CLOSE_WAIT;
-				printf("--CLOSE_WAIT--\n");
-				//send ack
-			}
-			//close -> FIN_WAIT_1
-			//send fin
-			else
-				error = 1;
-			break;
-		case FIN_WAIT_1:
-			if(flag == ACK){
-				state = FIN_WAIT_2;
-				printf("--FIN_WAIT_2--\n");
-			}
-			else if(flag == FIN){
-				state = CLOSING;
-				printf("--CLOSING--\n");
-				//send ack
-			}
-			else
-				error = 1;
-			break;
-		case CLOSE_WAIT:
-			//close -> LAST_ACK
-			//send FIN
-			/*else
-				error = 1;*/
-			break;
-		case FIN_WAIT_2:
-			if(flag == FIN){
-				state = TIME_WAIT;
-				printf("--TIME_WAIT--\n");
-				//send ack
-			}
-			else
-				error = 1;
-			break;
-		case CLOSING:
-			if(flag == ACK){
-				state = TIME_WAIT;
-				printf("--TIME_WAIT--\n");
-			}
-			else
-				error = 1;
-			break;		
-		case LAST_ACK:
-			if(flag == ACK){
-				state = CLOSED;
-				printf("--LAST_ACK--\n");
-			}
-			else
-				error = 1;
-			break;
-		case TIME_WAIT:
-			//start timer 2RTT
-			/*else
-				error = 1;*/
-			break;
-		/*case CLOSED:
-			break; */
-	}
 }
