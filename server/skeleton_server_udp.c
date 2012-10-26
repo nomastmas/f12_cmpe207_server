@@ -66,16 +66,17 @@ int main (void){
 	tcp_state = LISTEN;
  	//run forever
  	for(;;){
- 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 		check_for_error (ret, "recvfrom()");
  		switch (tcp_state){
  			case CLOSED:
  				printf ("CLOSED\n");
  				// placeholder for our close()
  				close (sockfd);
+ 				return 0;
  				break;
  			case LISTEN:
  				printf ("LISTEN\n");
+ 				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 				check_for_error (ret, "recvfrom()");
 				// open for connections
  				// listen()
  				//recv_header = buf;
@@ -95,6 +96,8 @@ int main (void){
 
 			case SYN_RCVD:
 				printf ("SYN_RCVD\n");
+				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 				check_for_error (ret, "recvfrom()");
  				memcpy (&recv_header, &buf, sizeof (recv_header));
  				if (recv_header.ack_flag == 1){
  					tcp_state = ESTABLISHED;
@@ -110,6 +113,8 @@ int main (void){
 				break;
 			case ESTABLISHED:
 				printf ("ESTABLISHED\n");
+				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 				check_for_error (ret, "recvfrom()");
  				memcpy (&recv_header, &buf, sizeof (recv_header));
  				if (recv_header.fin_flag == 1){
  					send_header.ack_flag = 1;
@@ -123,9 +128,9 @@ int main (void){
 			case CLOSE_WAIT:
 				printf ("CLOSE_WAIT\n");
 				// close()
-				send_header.ack_flag = 1;
 				// send (sockfd, send_header);
 				tcp_state = LAST_ACK;
+				
 				break;
 			case FIN_WAIT_2:
 				
@@ -135,6 +140,8 @@ int main (void){
 				break;		
 			case LAST_ACK:
 				printf ("LAST_ACK\n");
+				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 				check_for_error (ret, "recvfrom()");
  				memcpy (&recv_header, &buf, sizeof (recv_header));
  				if (recv_header.ack_flag == 1){
  					tcp_state = CLOSED;
@@ -144,7 +151,6 @@ int main (void){
  				}
 				break;
 			case TIME_WAIT:
-				
 				break;
  		}
  		//ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
