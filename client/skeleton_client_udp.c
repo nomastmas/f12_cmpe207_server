@@ -48,7 +48,33 @@ int main (int argc, char *argv[]){
 	//printf ("send message to UDP echo server:\n");
 	//fgets (buf, MAX, stdin);
 
+	printf ("send syn\n");
 	send_packet.syn_flag = 1;
+	memcpy (&buf, &send_packet, sizeof (send_packet));
+	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+
+	printf ("send ack\n");
+	bzero (&send_packet, sizeof (send_packet));
+	send_packet.ack_flag = 1;
+	memcpy (&buf, &send_packet, sizeof (send_packet));
+	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+
+	sleep (2);
+
+	printf ("send fin\n");
+	bzero (&send_packet, sizeof (send_packet));
+	send_packet.fin_flag = 1;
+	memcpy (&buf, &send_packet, sizeof (send_packet));
+	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+
+	sleep (2);
+
+	printf ("send ack\n");
+	bzero (&send_packet, sizeof (send_packet));
+	send_packet.ack_flag = 1;
 	memcpy (&buf, &send_packet, sizeof (send_packet));
 	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
 	check_for_error (ret, "sendto()");
@@ -56,7 +82,7 @@ int main (int argc, char *argv[]){
 	//ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
 	//check_for_error (ret, "recvfrom()");
 
-	printf ("==response==\n%s\n", buf);
+	//printf ("==response==\n%s\n", buf);
 	printf ("goodbye.\n");
 
 	close (sockfd);
