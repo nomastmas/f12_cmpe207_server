@@ -26,10 +26,10 @@ void check_for_error(int ret, char* s){
 	}
 }
 
-typedef union {
-    char full_20_byte[20]; 
+//typedef union {
+//    char full_20_byte[20]; 
     // assuming little endian other byte order is swapped
-    struct {
+    struct tcp_header {
         unsigned short int source_port;
         unsigned short int dest_port;
         unsigned int seq_num;
@@ -49,8 +49,11 @@ typedef union {
         unsigned short int checksum;
         unsigned short int urg_ptr;
     }__attribute__((packed));
-} packet_header;
+//} packet_header;
 
+//struct payload{
+//		char payload[576 - sizeof(struct tcp_header)];
+//};
 
 int main (int argc, char *argv[]){
 
@@ -84,47 +87,51 @@ int main (int argc, char *argv[]){
 
 // ---this section was added to send a test header---
 
-	packet_header header;
+	char segment[576]; //--added-
+   char *payload;
+	struct tcp_header *header = (struct tcp_header *) segment;
+	payload = &segment[sizeof (struct tcp_header)];
+	strcpy(payload, "...this is a test payload"); //need to ensure that null terminator is sent
 
-	header.source_port 	= 2000;
-	header.dest_port 		= 2100;
-	header.seq_num 		= 1;
-	header.ack_num 		= 0;
-	header.data_offset 	= 5; 
-	header.reserved 		= 1;
-	header.ns_flag 		= 0;
-	header.cwr_flag 		= 0;
-	header.ece_flag 		= 0;
-	header.urg_flag 		= 0;
-	header.ack_flag 		= 0;
-	header.psh_flag 		= 0;
-	header.rst_flag 		= 0;
-	header.syn_flag 		= 1;
-	header.fin_flag 		= 0;
-	header.window_size 	= 128;
-	header.checksum 		= 0;
-	header.urg_ptr 		= 0;
+	header->source_port 	= 2000;
+	header->dest_port 	= 2100;
+	header->seq_num 		= 1;
+	header->ack_num 		= 0;
+	header->data_offset 	= 5; 
+	header->reserved 		= 1;
+	header->ns_flag 		= 0;
+	header->cwr_flag 		= 0;
+	header->ece_flag 		= 0;
+	header->urg_flag 		= 0;
+	header->ack_flag 		= 0;
+	header->psh_flag 		= 0;
+	header->rst_flag 		= 0;
+	header->syn_flag 		= 1;
+	header->fin_flag 		= 0;
+	header->window_size 	= 128;
+	header->checksum 		= 0;
+	header->urg_ptr 		= 0;
 
-	printf("Source Port\t\t%d\n", 	header.source_port);
-	printf("Dest Port\t\t%d\n", 		header.dest_port);
-	printf("Seq Num\t\t\t%d\n", 		header.seq_num);
-	printf("Ack Num\t\t\t%d\n", 		header.ack_num);
-	printf("Data Offset\t\t%d\n", 	header.data_offset);
-	printf("Reserved\t\t%d\n", 		header.reserved);
-	printf("NS Flag\t\t\t%d\n", 		header.ns_flag);
-	printf("CWR Flag\t\t%d\n", 		header.cwr_flag);
-	printf("ECE Flag\t\t%d\n", 		header.ece_flag);
-	printf("URG Flag\t\t%d\n", 		header.urg_flag);
-	printf("ACK Flag\t\t%d\n", 		header.ack_flag);
-	printf("PSH Flag\t\t%d\n", 		header.psh_flag);
-	printf("RST Flag\t\t%d\n", 		header.rst_flag);
-	printf("SYN Flag\t\t%d\n", 		header.syn_flag);
-	printf("FIN Flag\t\t%d\n", 		header.fin_flag);
-	printf("Window Size\t\t%d\n", 	header.window_size);
-	printf("Checksum\t\t%d\n", 		header.checksum);
-	printf("Urgent Ptr\t\t%d\n", 		header.urg_ptr);
+	printf("Source Port\t\t%d\n", 	header->source_port);
+	printf("Dest Port\t\t%d\n", 		header->dest_port);
+	printf("Seq Num\t\t\t%d\n", 		header->seq_num);
+	printf("Ack Num\t\t\t%d\n", 		header->ack_num);
+	printf("Data Offset\t\t%d\n", 	header->data_offset);
+	printf("Reserved\t\t%d\n", 		header->reserved);
+	printf("NS Flag\t\t\t%d\n", 		header->ns_flag);
+	printf("CWR Flag\t\t%d\n", 		header->cwr_flag);
+	printf("ECE Flag\t\t%d\n", 		header->ece_flag);
+	printf("URG Flag\t\t%d\n", 		header->urg_flag);
+	printf("ACK Flag\t\t%d\n", 		header->ack_flag);
+	printf("PSH Flag\t\t%d\n", 		header->psh_flag);
+	printf("RST Flag\t\t%d\n", 		header->rst_flag);
+	printf("SYN Flag\t\t%d\n", 		header->syn_flag);
+	printf("FIN Flag\t\t%d\n", 		header->fin_flag);
+	printf("Window Size\t\t%d\n", 	header->window_size);
+	printf("Checksum\t\t%d\n", 		header->checksum);
+	printf("Urgent Ptr\t\t%d\n", 		header->urg_ptr);
 
-	ret = sendto (sockfd, &header, MAX, 0, (struct sockaddr*)&s_server, slen);
+	ret = sendto (sockfd, segment, sizeof(segment), 0, (struct sockaddr*)&s_server, slen);
 
 //	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen); //---eb removed for test
 	check_for_error (ret, "sendto()");

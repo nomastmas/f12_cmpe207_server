@@ -27,10 +27,10 @@ void check_for_error(int ret, char* s){
 	}
 }
 
-typedef union {
-    char full_20_byte[20]; 
+//typedef union {
+//    char full_20_byte[20]; 
     // assuming little endian other byte order is swapped
-    struct {
+    struct tcp_header {
         unsigned short int source_port;
         unsigned short int dest_port;
         unsigned int seq_num;
@@ -50,7 +50,7 @@ typedef union {
         unsigned short int checksum;
         unsigned short int urg_ptr;
     }__attribute__((packed));
-} packet_header;
+//};
 
 
 struct t_data{
@@ -101,28 +101,39 @@ int main (void){
 
 //  ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);  //---eb removed for test
 // ---this section was added to recv a test header---
-	packet_header header;
-  	ret = recvfrom (sockfd, &header, MAX, 0, (struct sockaddr*)&s_client, &slen);			
+
+	char segment[576]; //--added-
+//there has to be a better way to extract the payload; see below
+	char payload[576 - sizeof(struct tcp_header)];
+	struct tcp_header *header = (struct tcp_header *) segment;    
+
+  	ret = recvfrom (sockfd, segment, sizeof(segment), 0, (struct sockaddr*)&s_client, &slen);			
   	check_for_error (ret, "recvfrom()");
 
-	printf("Source Port\t\t%d\n", 	header.source_port);
-	printf("Dest Port\t\t%d\n", 		header.dest_port);
-	printf("Seq Num\t\t\t%d\n", 		header.seq_num);
-	printf("Ack Num\t\t\t%d\n", 		header.ack_num);
-	printf("Data Offset\t\t%d\n", 	header.data_offset);
-	printf("Reserved\t\t%d\n", 		header.reserved);
-	printf("NS Flag\t\t\t%d\n", 		header.ns_flag);
-	printf("CWR Flag\t\t%d\n", 		header.cwr_flag);
-	printf("ECE Flag\t\t%d\n", 		header.ece_flag);
-	printf("URG Flag\t\t%d\n", 		header.urg_flag);
-	printf("ACK Flag\t\t%d\n", 		header.ack_flag);
-	printf("PSH Flag\t\t%d\n", 		header.psh_flag);
-	printf("RST Flag\t\t%d\n", 		header.rst_flag);
-	printf("SYN Flag\t\t%d\n", 		header.syn_flag);
-	printf("FIN Flag\t\t%d\n", 		header.fin_flag);
-	printf("Window Size\t\t%d\n", 	header.window_size);
-	printf("Checksum\t\t%d\n", 		header.checksum);
-	printf("Urgent Ptr\t\t%d\n", 		header.urg_ptr);
+	printf("Source Port\t\t%d\n", 	header->source_port);
+	printf("Dest Port\t\t%d\n", 		header->dest_port);
+	printf("Seq Num\t\t\t%d\n", 		header->seq_num);
+	printf("Ack Num\t\t\t%d\n", 		header->ack_num);
+	printf("Data Offset\t\t%d\n", 	header->data_offset);
+	printf("Reserved\t\t%d\n", 		header->reserved);
+	printf("NS Flag\t\t\t%d\n", 		header->ns_flag);
+	printf("CWR Flag\t\t%d\n", 		header->cwr_flag);
+	printf("ECE Flag\t\t%d\n", 		header->ece_flag);
+	printf("URG Flag\t\t%d\n", 		header->urg_flag);
+	printf("ACK Flag\t\t%d\n", 		header->ack_flag);
+	printf("PSH Flag\t\t%d\n", 		header->psh_flag);
+	printf("RST Flag\t\t%d\n", 		header->rst_flag);
+	printf("SYN Flag\t\t%d\n", 		header->syn_flag);
+	printf("FIN Flag\t\t%d\n", 		header->fin_flag);
+	printf("Window Size\t\t%d\n", 	header->window_size);
+	printf("Checksum\t\t%d\n", 		header->checksum);
+	printf("Urgent Ptr\t\t%d\n", 		header->urg_ptr);
+
+	int i;
+   for(i = sizeof(struct tcp_header); i < 576; i++) {
+		payload[i - 20] = segment[i];
+	}
+	printf("\n%s\n", payload);
 
 // ---end significant changes---
 
@@ -179,7 +190,6 @@ void *rw(void * data){
 	inet_ntop (AF_INET, &(s_client->sin_addr), ip_addr, INET_ADDRSTRLEN);
 	port = ntohs (s_client->sin_port);
 
-// ---haven't passed the header to the thread as of yet---
 /*
 	printf ("==Received packet from %s:%d==\n %s\n",
 	ip_addr,
