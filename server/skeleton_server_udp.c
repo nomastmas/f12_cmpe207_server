@@ -68,7 +68,10 @@ int main (void){
  	for(;;){
  		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
  		memcpy (&recv_header, &buf, sizeof (packet_header));
- 		tcp_state = get_tcp_state (tcp_state, recv_header);
+ 		if (tcp_state == CLOSE_WAIT)
+ 			tcp_state = get_tcp_state (tcp_state, recv_header, "close");
+ 		else
+ 			tcp_state = get_tcp_state (tcp_state, recv_header, "");
  		printf ("%s\n", get_state_name (tcp_state));
  	}
 

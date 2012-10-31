@@ -36,7 +36,8 @@ typedef union {
 
 void die (char *s);
 void check_for_error(int ret, char* s);
-int get_tcp_state (int tcp_state, packet_header recv_packet);
+// msg is for any additional parameter that won't fit in packet_header, such as close
+int get_tcp_state (int tcp_state, packet_header recv_header, char* msg);
 char* get_state_name (int tcp_state);
 
 #if 0
