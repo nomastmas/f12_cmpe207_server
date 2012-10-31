@@ -29,7 +29,7 @@ struct t_data{
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
 
-enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
+//enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
 
 int main (void){
 	printf ("...booting up...\n");
@@ -58,7 +58,7 @@ int main (void){
 
  	get_self_ip (self_addr);
 
- 	printf ("== %s : %i ==\n", self_addr, PORT);
+ 	printf ("== %s %i ==\n", self_addr, PORT);
  	printf ("...waiting for clients...\n");
 
 	packet_header recv_header, send_header;
@@ -66,106 +66,10 @@ int main (void){
 	tcp_state = LISTEN;
  	//run forever
  	for(;;){
- 		switch (tcp_state){
- 			case CLOSED:
- 				printf ("CLOSED\n");
- 				// placeholder for our close()
- 				close (sockfd);
- 				return 0;
- 				break;
- 			case LISTEN:
- 				printf ("LISTEN\n");
- 				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 				check_for_error (ret, "recvfrom()");
-				// open for connections
- 				// listen()
- 				//recv_header = buf;
- 				memcpy (&recv_header, &buf, sizeof (recv_header));
- 				if (recv_header.syn_flag == 1){
- 					// send syn + ack
- 					send_header.syn_flag = 1;
- 					send_header.ack_flag = 1;
- 					// send (sockfd, send_header);
- 					tcp_state = SYN_RCVD;
- 				}
- 				else {
- 					tcp_state = LISTEN;
- 				}
-
-				break;
-
-			case SYN_RCVD:
-				printf ("SYN_RCVD\n");
-				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 				check_for_error (ret, "recvfrom()");
- 				memcpy (&recv_header, &buf, sizeof (recv_header));
- 				if (recv_header.ack_flag == 1){
- 					tcp_state = ESTABLISHED;
- 				}
- 				else{
- 					//loop until recv ack
- 					tcp_state = SYN_RCVD;
- 				}
- 				break;
-
-			case SYN_SENT:
-				//work on client later
-				break;
-			case ESTABLISHED:
-				printf ("ESTABLISHED\n");
-				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 				check_for_error (ret, "recvfrom()");
- 				memcpy (&recv_header, &buf, sizeof (recv_header));
- 				if (recv_header.fin_flag == 1){
- 					send_header.ack_flag = 1;
- 					// send (sockfd, send_header);
- 					tcp_state = CLOSE_WAIT;
- 				}
-				break;
-			case FIN_WAIT_1:
-
-				break;
-			case CLOSE_WAIT:
-				printf ("CLOSE_WAIT\n");
-				// close()
-				// send (sockfd, send_header);
-				tcp_state = LAST_ACK;
-				
-				break;
-			case FIN_WAIT_2:
-				
-				break;
-			case CLOSING:
-				
-				break;		
-			case LAST_ACK:
-				printf ("LAST_ACK\n");
-				ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 				check_for_error (ret, "recvfrom()");
- 				memcpy (&recv_header, &buf, sizeof (recv_header));
- 				if (recv_header.ack_flag == 1){
- 					tcp_state = CLOSED;
- 				}
- 				else {
- 					tcp_state = LAST_ACK;
- 				}
-				break;
-			case TIME_WAIT:
-				break;
- 		}
- 		//ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 		//check_for_error (ret, "recvfrom()");
-
- 		/*
-		rw_data.fd = sockfd;
-		rw_data.buffer = buf;
-		rw_data.client = &s_client;
-		rw_data.slen = slen;
-		rw_data.ret = ret;
-
-		ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
-		check_for_error(ret, "pthread_create()");
-		*/
+ 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		memcpy (&recv_header, &buf, sizeof (packet_header));
+ 		tcp_state = get_tcp_state (tcp_state, recv_header);
+ 		printf ("%s\n", get_state_name (tcp_state));
  	}
 
  	close (sockfd);
