@@ -70,6 +70,9 @@ int main (int argc, char *argv[]){
 	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
 	check_for_error (ret, "sendto()");
 
+	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+	
 	sleep (2);
 
 	printf ("send ack\n");
