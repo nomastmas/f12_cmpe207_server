@@ -49,6 +49,7 @@ int main (int argc, char *argv[]){
 	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
 	check_for_error (ret, "sendto()");
 
+
 	ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
 	check_for_error (ret, "recvfrom()");
 
@@ -58,3 +59,6 @@ int main (int argc, char *argv[]){
 	close (sockfd);
 	return 0;
 }
+
+
+
