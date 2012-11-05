@@ -13,18 +13,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define MAX 256
-
-void die (char *s){
-	perror(s);
-	exit(1);
-}
-
-void check_for_error(int ret, char* s){
-	if (ret < 0){
-		die (s);
-	}
-}
 
 //typedef union {
 //    char full_20_byte[20]; 
@@ -34,7 +22,7 @@ void check_for_error(int ret, char* s){
         unsigned short int dest_port;
         unsigned int seq_num;
         unsigned int ack_num;
-        unsigned int data_offset : 4; //SB:Data offset should be 5 as per 207 specification
+        unsigned int data_offset : 4;
         unsigned int reserved : 3;
         unsigned int ns_flag :  1;
         unsigned int cwr_flag : 1;
@@ -51,48 +39,54 @@ void check_for_error(int ret, char* s){
     }__attribute__((packed));
 //} packet_header;
 
-//struct payload{
-//		char payload[576 - sizeof(struct tcp_header)];
-//};
+char segment[576];
+struct tcp_header *header = (struct tcp_header *) segment;
+
+//----------------------------------------------------------
+//                TCP Control Block
+//----------------------------------------------------------
+
+struct tcp_control_block {
+	int sd;
+	struct sockaddr_in dest_addr;
+};
+
+struct tcp_control_block server_tcb[10] = {0};
+
+//----------------------------------------------------------
+//                  Send Buffer
+//----------------------------------------------------------
+
+const unsigned char *send_buffer = "This is a test message..."; //not sure where this belongs
+
+//----------------------------------------------------------
+//              Fuctions - back into header file
+//----------------------------------------------------------
+
+
+void die (char *s){
+	perror(s);
+	exit(1);
+}
+
+void check_for_error(int ret, char* s){
+	if (ret < 0){
+		die (s);
+	}
+}
+
+void print_header (struct tcp_header *header);
+int send_207(int sockfd, const unsigned char *buffer, uint32_t buffer_size, int flags);
+
+//----------------------------------------------------------
+//                  Program Main
+//----------------------------------------------------------
 
 int main (int argc, char *argv[]){
 
-	if ( argc != 3 ){
-		die("usage: client hostname");
-	}
-
-	int sockfd, ret, slen;
-	char buf[MAX];
-	struct addrinfo hints, *servinfo, *p;
-	struct sockaddr_in s_server;
-
-	const char *port = argv[2];
-
-	slen = sizeof(s_server);
-
-	bzero (&s_server,sizeof(s_server));
-	s_server.sin_family = AF_INET;
-	s_server.sin_addr.s_addr = inet_addr (argv[1]);	//inet_addr not recommended
-	s_server.sin_port	= htons (atoi(argv[2]));
-
-	printf ("...booting up client...\n");
-
-	sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (sockfd == -1) {
-		die("socket()");
-	}
-
-	printf ("send message to UDP echo server:\n");
-//	fgets (buf, MAX, stdin); //---eb removed for test
-
-// ---this section was added to send a test header---
-
-	char segment[576]; //--added-
-   char *payload;
-	struct tcp_header *header = (struct tcp_header *) segment;
-	payload = &segment[sizeof (struct tcp_header)];
-	strcpy(payload, "...this is a test payload"); //need to ensure that null terminator is sent
-
+//----------------------------------------------------------
+//              Initialize the Header
+//----------------------------------------------------------
 	header->source_port 	= 2000;
 	header->dest_port 	= 2100;
 	header->seq_num 		= 1;
@@ -112,6 +106,44 @@ int main (int argc, char *argv[]){
 	header->checksum 		= 0;
 	header->urg_ptr 		= 0;
 
+//print_header (header);
+
+	if ( argc != 3 ){
+		die("usage: client hostname");
+	}
+
+	int sockfd;
+	struct sockaddr_in server_address;
+
+	bzero (&server_address,sizeof(server_address));
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = inet_addr (argv[1]);	//inet_addr not recommended
+	server_address.sin_port	= htons (atoi(argv[2]));
+
+	sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (sockfd == -1) {
+		die("socket()");
+	}
+
+//this gets filled in earlier....
+	server_tcb[0].sd = sockfd;
+	server_tcb[0].dest_addr = server_address;
+
+// '3' is hard-coded; not sure how to input the socket descriptor for the correct underlying
+// upd socket; need error checking, probably in the send_207 function
+	int return_value = send_207(3, send_buffer, sizeof(send_buffer), 0); 			  
+	printf("sent %d bytes...\n", return_value);
+
+	close (sockfd);
+	return 0;
+}
+
+//----------------------------------------------------------
+//               Function Definitions
+//----------------------------------------------------------
+
+void print_header (struct tcp_header *header)
+{
 	printf("Source Port\t\t%d\n", 	header->source_port);
 	printf("Dest Port\t\t%d\n", 		header->dest_port);
 	printf("Seq Num\t\t\t%d\n", 		header->seq_num);
@@ -130,18 +162,25 @@ int main (int argc, char *argv[]){
 	printf("Window Size\t\t%d\n", 	header->window_size);
 	printf("Checksum\t\t%d\n", 		header->checksum);
 	printf("Urgent Ptr\t\t%d\n", 		header->urg_ptr);
-
-	ret = sendto (sockfd, segment, sizeof(segment), 0, (struct sockaddr*)&s_server, slen);
-
-//	ret = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, slen); //---eb removed for test
-	check_for_error (ret, "sendto()");
-
-//	ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
-//	check_for_error (ret, "recvfrom()");
-
-//	printf ("==response==\n%s\n", buf);
-	printf ("goodbye.\n");
-
-	close (sockfd);
-	return 0;
 }
+
+int send_207(int sockfd, const unsigned char *buffer, uint32_t buffer_size, int flags)
+{	
+	int i;
+	int index;
+	for (i = 0; i < 10; i++){
+		if (server_tcb[i].sd == sockfd)
+			index = i;
+	}
+
+	int socket = server_tcb[index].sd;
+	char *payload;
+	payload = &segment[sizeof (struct tcp_header)];
+	strcpy(payload, buffer);
+
+	struct sockaddr_in dest = server_tcb[index].dest_addr;
+	int rv = sendto(sockfd, segment, sizeof(segment), flags, (struct sockaddr *) &dest, sizeof(dest));
+	return rv;
+}
+
+
