@@ -1,12 +1,16 @@
 #ifndef _207LAYER_H
 #define _207LAYER_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 //struct union definition of packet header
-
-void die (char *s);
-void check_for_error(int ret, char* s);
-
-// TCP functions
 
 // packet header
 
@@ -95,5 +99,52 @@ union 207TcpHdr40
 // ssize_t recv(int sockfd, void *buf, size_t len, int flags);
 // ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 // int close(int fd);
+
+void die (char *s);
+void check_for_error(int ret, char* s);
+
+#define BACKLOG 10
+#define CMPE207_SOC 1
+#define CMPE207_PROC 2
+#define CMPE207_FAM  3
+#define MAX_SOCKET 10
+//PORT_UDP = 2100 + group #
+#define UDP_PORT 2102
+//PORT_207 = 1207 & up
+#define CMPE207_PORT_BASE 1207
+#define MAX_PORT 5
+
+//tracks 207 ports in use: ready = 0 , in use = 1
+extern int cmpe207_port_in_use[MAX_PORT];
+
+typedef struct 
+{
+	int sock_in_use; 	// socket in use = 1; ready = 0;
+	int sockfd_udp; 	//tracks udp sockets
+	unsigned short  cmpe207_port;     //htons(3490), 207 port #
+
+	struct sockaddr_in sock_struct_UDP;
+}Control_Block;
+
+extern Control_Block CB[MAX_SOCKET];
+
+// TCP functions
+
+/*
+cmpe207_socket
+	Function: 	- creates sockfd_207 and sock_fd_UDP
+			- sets sock_in_use
+	Returns:	- sockfd_207
+*/
+extern int cmpe207_socket(int ai_family, int ai_socktype, int ai_protocol);
+
+/*
+cmpe207_bind
+	Function: 	- copies own IP, port, and family to sock_struct_UDP
+			- assigns UDP and 207 port #
+	Returns:	- UDP bind error code
+*/
+extern int cmpe207_bind(int sockfd, struct sockaddr_in *addr, socklen_t addrlen);
+
 
 #endif 
