@@ -3,13 +3,12 @@
 
 //struct union definition of packet header
 
-void die (char *s);
-void check_for_error(int ret, char* s);
 
-// TCP functions
+enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
+
 
 // packet header
-
+// may not need a union
 typedef union {
     char full_20_byte[20];
     // assuming little endian other byte order is swapped
@@ -34,6 +33,12 @@ typedef union {
         unsigned short int urg_ptr;
     }__attribute__((packed));
 } packet_header;
+
+void die (char *s);
+void check_for_error(int ret, char* s);
+// msg is for any additional parameter that won't fit in packet_header, such as close
+int get_tcp_state (int tcp_state, packet_header recv_header, char* msg);
+char* get_state_name (int tcp_state);
 
 #if 0
 #define __BYTE_ORDER __LITTLE_ENDIAN

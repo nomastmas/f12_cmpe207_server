@@ -29,12 +29,13 @@ struct t_data{
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
 
+//enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
 
 int main (void){
 	printf ("...booting up...\n");
 
 	struct sockaddr_in s_server, s_client;
-	int sockfd, ret, slen, t_good;
+	int sockfd, ret, slen, tcp_state;
 	char buf[MAX];
 	struct t_data rw_data;
 	pthread_t t_id;
@@ -57,27 +58,25 @@ int main (void){
 
  	get_self_ip (self_addr);
 
- 	printf ("== %s : %i ==\n", self_addr, PORT);
+ 	printf ("== %s %i ==\n", self_addr, PORT);
  	printf ("...waiting for clients...\n");
-	
+
+	packet_header recv_header, send_header;
+
+	tcp_state = LISTEN;
  	//run forever
  	for(;;){
-
  		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 		check_for_error (ret, "recvfrom()");
-
-		rw_data.fd = sockfd;
-		rw_data.buffer = buf;
-		rw_data.client = &s_client;
-		rw_data.slen = slen;
-		rw_data.ret = ret;
-
-		ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
-		check_for_error(ret, "pthread_create()");
+ 		memcpy (&recv_header, &buf, sizeof (packet_header));
+ 		if (tcp_state == CLOSE_WAIT)
+ 			tcp_state = get_tcp_state (tcp_state, recv_header, "close");
+ 		else
+ 			tcp_state = get_tcp_state (tcp_state, recv_header, "");
+ 		printf ("%s\n", get_state_name (tcp_state));
  	}
 
  	close (sockfd);
-	pthread_exit(NULL);
+	//pthread_exit(NULL);
  	return 0;
 }
 
