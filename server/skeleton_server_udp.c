@@ -18,6 +18,9 @@
 #define MAX		512
 #define PORT 	9999
 
+Control_Block CB[MAX_SOCKET] = {0};
+int cmpe207_port_in_use [MAX_PORT] = {0};
+
 struct t_data{
 	int fd;
 	char* buffer;
@@ -42,31 +45,32 @@ int main (void){
 
 	slen = sizeof(s_client);
 
-	sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sockfd = cmpe207_socket(CMPE207_FAM, CMPE207_SOC, CMPE207_PROC);
 	if (sockfd < 0) {
 		die ("socket()");
 	}
 
-	memset((char *) &s_server, 0, sizeof(s_server));
-	s_server.sin_family = AF_INET;
- 	s_server.sin_port = htons(PORT);
- 	s_server.sin_addr.s_addr = htonl(INADDR_ANY);	
- 	if (bind (sockfd, (struct sockaddr*) &s_server, sizeof(s_server)) < 0){
- 		die ("bind()");
- 	}
-
  	get_self_ip (self_addr);
 
- 	printf ("== %s : %i ==\n", self_addr, PORT);
+	memset((char *) &s_server, 0, sizeof(s_server));
+	s_server.sin_family = AF_INET;
+  	inet_pton(AF_INET, self_addr, &(s_server.sin_addr));	
+ 	if (cmpe207_bind(sockfd, &s_server, sizeof s_server) < 0){
+ 		die ("bind()");
+ 	}
+	
+	int port = htons(CB[sockfd].sock_struct_UDP.sin_port);
+ 	printf ("== %s : %i ==\n", self_addr, port);
  	printf ("...waiting for clients...\n");
 	
+	int sockfd_udp = CB[sockfd].sockfd_udp;
  	//run forever
  	for(;;){
 
- 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		ret = recvfrom (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
  		check_for_error (ret, "recvfrom()");
 
-		rw_data.fd = sockfd;
+		rw_data.fd = sockfd_udp;
 		rw_data.buffer = buf;
 		rw_data.client = &s_client;
 		rw_data.slen = slen;
@@ -76,7 +80,7 @@ int main (void){
 		check_for_error(ret, "pthread_create()");
  	}
 
- 	close (sockfd);
+ 	close (sockfd_udp);
 	pthread_exit(NULL);
  	return 0;
 }
@@ -94,8 +98,8 @@ void get_self_ip (char* addressBuffer){
         	// only IPv4 address
             tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
 
-            if (strcmp(ifa->ifa_name, "en0") == 0 
-            	|| strcmp(ifa->ifa_name, "eth0") == 0){
+            if (!strcmp(ifa->ifa_name, "en0") == 0 
+            	|| !strcmp(ifa->ifa_name, "eth0") == 0){
                 inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);    
             	//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);     
             }  
