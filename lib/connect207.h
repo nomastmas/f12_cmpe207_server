@@ -52,11 +52,14 @@ struct myTcpBlock
 	int sockfd;
 	struct sockaddr_in *pSocket_info;
 	struct packet_header *pTcpH;
+	struct packet_header *pSentTcpH;
 	struct sequence *pSeq;
 	int tcp_current_state;
 	int tcp_prev_state;
 
 };
 
+struct myTcpBlock gTcp_Block[MAX_TCB_SIZE];
 
+void connect207_print_tcp_header(int tcp_block_index_in);
 #endif
