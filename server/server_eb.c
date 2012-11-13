@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -8,13 +9,16 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#include <sys/types.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-#define MAX 512
+#include <ifaddrs.h>
+
+
 #define PORT 9999
+
+
+//----------------------------------------------------------
+//                     TCP Header
+//----------------------------------------------------------
 
 //typedef union {
 //    char full_20_byte[20]; 
@@ -41,42 +45,60 @@
     }__attribute__((packed));
 //};
 
-char segment[576];
+//----------------------------------------------------------
+//             Segment & Header Position
+//----------------------------------------------------------
+char segment[556];  //536 byte payload + 20 byte header
 struct tcp_header *header = (struct tcp_header *) segment;
 
 //----------------------------------------------------------
 //                TCP Control Block
 //----------------------------------------------------------
 
+typedef struct Queue  //is part of the control block
+{
+        int capacity;
+        int size;			//current size
+        int front;      //first in; next to be removed
+        int end;        //end; where we add the next element
+        char *elements;
+}Queue;
+
 struct tcp_control_block {
 	int sd;
-	struct sockaddr_in client_addr;
+	struct sockaddr_in remote_addr;
+	struct sockaddr_in local_addr;
+	int snd_una; 	//earliest sequence number sent, but not acknowledged
+	int snd_nxt; 	//next sequence number to be sent
+	int snd_wnd;  	//size of the send window (?)
+	int rcv_nxt;   //next sequence number to be received
+	int rcv_wnd;   //size of the receive window (advertised by remote host)
+	Queue *tcp_send_buffer;  //pointer to the tcp send buffer
+	Queue *tcp_recv_buffer;  //pointer to the tcp send buffer
 };
 
-struct tcp_control_block client_tcb[10] = {0};
-
-struct t_data{
-	int fd;
-	char* buffer;
-	struct sockaddr_in* client;
-	int slen;
-	int ret;
-};
+struct tcp_control_block server_tcb[10] = {{0}};
 
 //----------------------------------------------------------
-//                   Receive Buffer
+//                 Application Buffers
 //----------------------------------------------------------
 
-char recv_buffer[576];  //not sure where this belongs
+char recv_buffer[4096];  //part of the application...
+char send_buffer[4096];
 
 //----------------------------------------------------------
-//              Fuctions - back into header file
+//          Function Declarations - (to header file)
 //----------------------------------------------------------
 
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
 void print_header (struct tcp_header *header);
 int recv_207(int sockfd, char *buffer, ssize_t buffer_size, int flags);
+int send_207(int sockfd, const unsigned char *buffer, uint32_t buffer_size, int flags);
+Queue * create_queue(int maxElements);
+void enqueue(Queue *q_ptr,char element);
+void dequeue(Queue *q_ptr);
+int front(Queue *q_ptr);
 
 void die (char *s){
 	perror(s);
@@ -117,19 +139,26 @@ int main (void){
 	header->checksum 		= 0;
 	header->urg_ptr 		= 0;
 
-	printf ("...booting up...\n");
+//----------------------------------------------------------
+//              Initialize the TCB
+// (has to be done somewhere in the handshake process
+//----------------------------------------------------------
 
-	struct sockaddr_in s_server;
-	int sockfd, t_good;
-	struct t_data rw_data;
-	pthread_t t_id;
-	char self_addr[INET_ADDRSTRLEN];
+	server_tcb[0].rcv_nxt = 1;
+	server_tcb[0].rcv_wnd = 4096;
+	server_tcb[0].snd_una = 1;
+	server_tcb[0].sd = 3;
+	server_tcb[0].tcp_send_buffer = create_queue(4096);
+	server_tcb[0].tcp_recv_buffer = create_queue(4096);
 
+
+	int sockfd;
 	sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sockfd < 0) {
 		die ("socket()");
 	}
 
+	struct sockaddr_in s_server;
 	memset((char *) &s_server, 0, sizeof(s_server));
 	s_server.sin_family = AF_INET;
   	s_server.sin_port = htons(PORT);
@@ -138,6 +167,7 @@ int main (void){
   		die ("bind()");
 	}
 
+	char self_addr[INET_ADDRSTRLEN];
 	get_self_ip (self_addr);
 	printf ("== %s : %i ==\n", self_addr, PORT);
 	printf ("...waiting for clients...\n");
@@ -145,21 +175,18 @@ int main (void){
   //run forever
 	for(;;){
 
-	ssize_t rv = recv_207(3, recv_buffer, sizeof(recv_buffer), 0);
-	printf("received %d bytes\n", rv);
+	int rv01 = recv_207(3, recv_buffer, sizeof(recv_buffer), 0); // sockfd (3) will not be hard-coded
+	printf("server received %d bytes\n", rv01);
+	printf("server received payload: %s\n", recv_buffer);
 
-	rw_data.fd = sockfd;
-//	rw_data.buffer = payload;  //check this later
-//	rw_data.client = &client;  //this will have to pulled from the tcb if we want to use it
-	rw_data.slen = sizeof(recv_buffer);
-//	rw_data.ret = ret;
+// for testing, echo back the client's message....
+	char *tmp_buffer;
+	strcpy(tmp_buffer, recv_buffer);
+	int rv02 = send_207(3, tmp_buffer, sizeof(tmp_buffer), 0);
+// end testing here
 
-	int ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
-	check_for_error(ret, "pthread_create()");
   	}
-
   	close (sockfd);
-	pthread_exit(NULL);
   	return 0;
 }
 
@@ -187,31 +214,7 @@ void get_self_ip (char* addressBuffer){
 	freeifaddrs(ifAddrStruct);
 }
 
-void *rw(void * data){
 
-	struct t_data* rw_data = (struct t_data*) data;
-	int sockfd = rw_data->fd;
-	int slen = rw_data->slen;
-	int port, ret;
-//	char* buf = rw_data->buffer; //---eb removed for test
-
-	struct sockaddr_in* client_addr = rw_data->client;
-	char ip_addr[INET_ADDRSTRLEN];
-
-	inet_ntop (AF_INET, &(client_addr->sin_addr), ip_addr, INET_ADDRSTRLEN);
-	port = ntohs (client_addr->sin_port);
-
-/*
-	printf ("==Received packet from %s:%d==\n %s\n",
-	ip_addr,
-	port,
-	buf
-	);
-
-	ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)client_addr, slen);
-	check_for_error (ret, "sendto()");
-*/
-}
 
 //----------------------------------------------------------
 //               Function Definitions - added
@@ -240,53 +243,152 @@ void print_header (struct tcp_header *header)
 }
 
 
-/*
+
 int send_207(int sockfd, const unsigned char *buffer, uint32_t buffer_size, int flags)
 {	
-	int i;
 	int index;
-	for (i = 0; i < 10; i++){
+	for (int i = 0; i < 10; i++){
 		if (server_tcb[i].sd == sockfd)
 			index = i;
 	}
 
-	int socket = server_tcb[index].sd;
-	char *payload;
-	payload = &segment[sizeof (struct tcp_header)];
-	strcpy(payload, buffer);
+	char *payload;	
+	int bytes_read = 0;
+	int bytes_to_read = strlen(buffer);
+	printf("bytes to read into tcp_send_buffer: %d\n", bytes_to_read);
+	int bytes_sent = 0;
+	
+	while (bytes_read != bytes_to_read) { //data sent by app may be more than segment size; loop
 
-	struct sockaddr_in dest = server_tcb[index].dest_addr;
-	int rv = sendto(sockfd, segment, sizeof(segment), flags, (struct sockaddr*)&dest, sizeof(dest));
-	return rv;
+		// if unack'd in sending buffer > rcv.wnd; block, don't send anything
+		while (server_tcb[index].tcp_send_buffer->size >= server_tcb[0].rcv_wnd){ 
+
+			sleep(1); // probably signal or something as discussed in class; not sleep
+		}
+
+		header->seq_num = server_tcb[index].snd_nxt;                 	//set the header sequence number
+      server_tcb[index].snd_nxt += sizeof(segment);						//update snd.nxt
+		header->ack_num = server_tcb[index].rcv_nxt;							//set the header ack number
+
+		server_tcb[index].snd_wnd = server_tcb[index].tcp_recv_buffer->size //calculate window size
+											 - (server_tcb[index].snd_nxt
+											 +	 server_tcb[index].snd_una);
+
+		header->window_size = server_tcb[index].snd_wnd;               //set the header window size
+
+	   payload = &segment[sizeof (struct tcp_header)];          		//position payload in segment
+		for (int i = bytes_read; i < 536 + bytes_read; i++) {
+				enqueue(server_tcb[index].tcp_send_buffer, buffer[i]); 	//buffer the payload until receive ack
+				payload[i -bytes_read] = buffer [i]; 	             		//construct payload for send	
+		}
+		bytes_read += strlen(payload);            //NOT SURE IF THIS WORKS IF MORE THAN ONE SEGMENT NEEDED
+																//OR THE WHOLE LOOP LOGIC ABOVE FOR THAT MATTER
+		
+		printf("bytes read into tcp_send_buffer: %d\n", bytes_read);		
+		printf("payload about to be echoed by server: %s\n", payload);
+
+		int socket = server_tcb[index].sd;
+		struct sockaddr_in remote = server_tcb[index].remote_addr;
+		int rv = sendto(sockfd, segment, sizeof(segment), flags, (struct sockaddr*)&remote, sizeof(remote));
+      //add some error checking...
+
+		bytes_sent += rv;  //keep a running total of bytes sent
+		printf("bytes sent by server: %d\n", rv);		
+	} // end first while
+	return bytes_sent;
 }
-*/
+
 
 int recv_207(int sockfd, char *buffer, ssize_t buffer_size, int flags)
 {	    
 	struct sockaddr_in address;
 	socklen_t addr_size = sizeof(address);
-  	ssize_t rv = recvfrom (sockfd, segment, sizeof(segment), 0, (struct sockaddr *) &address, &addr_size);
-//add error checking
-	printf("received %d bytes\n", rv);	
+  	int rv = recvfrom (sockfd, segment, sizeof(segment), 0, (struct sockaddr *) &address, &addr_size);
+      //add some error checking...
 
-	struct tcp_header *header = (struct tcp_header *) segment;
-	char *payload;
-	payload = &segment[sizeof (struct tcp_header)];
-	print_header(header);
-	printf("received payload: %s\n", payload);
+	struct tcp_header *header = (struct tcp_header *) segment;		
+	if (header->ack_flag != 1)
+		; // illegal segment, do we send a reset and exit here?
 
-	int i;
 	int index;
-	for (i = 0; i < 10; i++){
-		if (sockfd == client_tcb[i].sd) {
-			printf("socket is already in tcb; update tcb\n");
+	for (int i = 0; i < 10; i++){  						  //find the index of this socket in the tcb
+		if (sockfd == server_tcb[i].sd) {
 			index = i;
 		}
-		else
-			printf("tcb shoud have this sockfd if we go this far; error\n");
+	}
+  	
+	server_tcb[index].remote_addr = address; 	       //save the client address (should be done earlier)	
+	server_tcb[index].rcv_wnd = header->window_size; //set send window equal to advertised window size
+
+	if (header->ack_num > server_tcb[index].snd_una) {                    //if ack is > last acknowledgment
+      int bytes_to_remove = header->ack_num - server_tcb[index].snd_una; //amount of ack'd data
+		for (int i = 1; i < server_tcb[index].snd_una; i++)                //take ack'd data out of send buffer
+			dequeue(server_tcb[index].tcp_send_buffer);
+		server_tcb[index].snd_una = header->ack_num + 1; 	//update send.una if an ack received
 	}
 
-	strcpy(buffer, payload);
+	char *payload;                    
+	payload = &segment[sizeof (struct tcp_header)];			//extract the payload	
+
+	if(header->seq_num == server_tcb[index].rcv_nxt) {		// if true, segment been received in order
+		strcat(buffer, payload);
+		server_tcb[index].rcv_nxt = server_tcb[index].rcv_nxt + rv; //update next expected sequence number
+		}
+		else
+		; //temporary buffer if out of order (?)
+		  //i think this is going to have to store the entire segment and then go through the above
+		  //check again; i'm not sure how to do that; assume in order for now.
 	return rv;
+}
+
+Queue * create_queue(int maxElements)
+{
+        Queue *q_ptr;
+        q_ptr = (Queue *)malloc(sizeof(Queue));
+        q_ptr->elements = (char *)malloc(sizeof(char)*maxElements);
+        q_ptr->size 		= 0;
+        q_ptr->capacity = maxElements;
+        q_ptr->front 	= 0;
+        q_ptr->end 		= -1;
+        return q_ptr;
+}
+
+void enqueue(Queue *q_ptr,char element)
+{
+	if(q_ptr->size == q_ptr->capacity)
+		printf("queue is full; drop segment(?)\n");
+	else {
+		q_ptr->size++;
+		q_ptr->end = q_ptr->end + 1;
+		if(q_ptr->end == q_ptr->capacity)  	 	//wrap around if at end of array
+			q_ptr->end = 0;
+		q_ptr->elements[q_ptr->end] = element; //store the element (char)
+	}
+return;
+}
+
+
+void dequeue(Queue *q_ptr)
+{
+	if(q_ptr->size==0) {
+		printf("queue is emptyp; noting to dequeue\n");
+		return;
+	}
+   else {
+		q_ptr->size--;     						//size is one smaller
+		q_ptr->front++;    						//front (next one removed) moves over 1
+		if(q_ptr->front==q_ptr->capacity) 	//wrap around if necessary
+			q_ptr->front=0;
+      }
+return;
+}
+
+int front(Queue *q_ptr)
+{
+	if(q_ptr->size==0) {
+		printf("Queue is Empty\n");
+		exit(0);
+	}
+return q_ptr->elements[q_ptr->front];
 }
 

@@ -39,7 +39,7 @@
     }__attribute__((packed));
 //} packet_header;
 
-char segment[576];
+char segment[556];
 struct tcp_header *header = (struct tcp_header *) segment;
 
 //----------------------------------------------------------
@@ -90,19 +90,19 @@ int main (int argc, char *argv[]){
 	header->source_port 	= 2000;
 	header->dest_port 	= 2100;
 	header->seq_num 		= 1;
-	header->ack_num 		= 0;
+	header->ack_num 		= 1;
 	header->data_offset 	= 5; 
-	header->reserved 		= 1;
+	header->reserved 		= 0;
 	header->ns_flag 		= 0;
 	header->cwr_flag 		= 0;
 	header->ece_flag 		= 0;
 	header->urg_flag 		= 0;
-	header->ack_flag 		= 0;
+	header->ack_flag 		= 1;
 	header->psh_flag 		= 0;
 	header->rst_flag 		= 0;
-	header->syn_flag 		= 1;
+	header->syn_flag 		= 0;
 	header->fin_flag 		= 0;
-	header->window_size 	= 128;
+	header->window_size 	= 4096;
 	header->checksum 		= 0;
 	header->urg_ptr 		= 0;
 
@@ -114,6 +114,7 @@ int main (int argc, char *argv[]){
 
 	int sockfd;
 	struct sockaddr_in server_address;
+	socklen_t saddr_len = sizeof(server_address);
 
 	bzero (&server_address,sizeof(server_address));
 	server_address.sin_family = AF_INET;
@@ -133,6 +134,10 @@ int main (int argc, char *argv[]){
 // upd socket; need error checking, probably in the send_207 function
 	int return_value = send_207(3, send_buffer, sizeof(send_buffer), 0); 			  
 	printf("sent %d bytes...\n", return_value);
+
+	char buffer[1024];
+   int num_bytes_received = recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr *) &server_address, &saddr_len);
+	printf("received %d bytes...\n", num_bytes_received);
 
 	close (sockfd);
 	return 0;
