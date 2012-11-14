@@ -4,6 +4,8 @@
 
 #include "207layer.h"
 
+enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
+
 void die (char *s){
 	perror(s);
 	exit(1);
@@ -39,7 +41,7 @@ int get_tcp_state (int tcp_state, packet_header recv_header, char* msg){
 				tcp_state = SYN_RCVD;
 			}
 			else {
-				tcp_state = LISTEN;
+				tcp_state = CLOSED;
 			}
 		break;
 
@@ -50,7 +52,7 @@ int get_tcp_state (int tcp_state, packet_header recv_header, char* msg){
 			}
 			else{
 				//loop until recv ack
-				tcp_state = SYN_RCVD;
+				tcp_state = CLOSED;
 			}
 			break;
 
@@ -138,3 +140,10 @@ char* get_state_name (int tcp_state){
 	const char* state_name[] = {"CLOSED", "LISTEN", "SYN_RCVD", "SYN_SENT", "ESTABLISHED", "FIN_WAIT_1", "CLOSE_WAIT", "FIN_WAIT_2", "CLOSING", "LAST_ACK", "TIME_WAIT"};
 	return (char*)state_name[tcp_state];
 }
+
+int check_state(int sockfd, char* state){
+	return !(strcmp((char*)get_state_name(CB[sockfd].tcp_state), state));
+}
+
+
+

@@ -44,7 +44,7 @@ int main (void){
 	char self_addr[INET_ADDRSTRLEN];
 
 	slen = sizeof(s_client);
-
+//207 socket
 	sockfd = cmpe207_socket(CMPE207_FAM, CMPE207_SOC, CMPE207_PROC);
 	if (sockfd < 0) {
 		die ("socket()");
@@ -54,16 +54,25 @@ int main (void){
 
 	memset((char *) &s_server, 0, sizeof(s_server));
 	s_server.sin_family = AF_INET;
-  	inet_pton(AF_INET, self_addr, &(s_server.sin_addr));	
+  	inet_pton(AF_INET, self_addr, &(s_server.sin_addr));
+//207 bind	
  	if (cmpe207_bind(sockfd, &s_server, sizeof s_server) < 0){
  		die ("bind()");
  	}
 	
 	int port = htons(CB[sockfd].sock_struct_UDP.sin_port);
  	printf ("== %s : %i ==\n", self_addr, port);
- 	printf ("...waiting for clients...\n");
-	
+//207 listen
+	cmpe207_listen(sockfd, 10);
+ 	
 	int sockfd_udp = CB[sockfd].sockfd_udp;
+	printf ("...waiting for clients...\n");
+
+//207 accept
+	int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
+	printf("ssockfd %d", ssockfd);
+
+	printf("accept completed \n");
  	//run forever
  	for(;;){
 
@@ -105,6 +114,7 @@ void get_self_ip (char* addressBuffer){
             }  
         } 
     }
+
     if (ifAddrStruct!=NULL) 
     	freeifaddrs(ifAddrStruct);
 }

@@ -31,6 +31,8 @@ int main (int argc, char *argv[]){
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_in s_server;
 
+	packet_header send_packet;
+
 	const char *port = argv[2];
 
 	slen = sizeof(s_server);
@@ -50,9 +52,25 @@ int main (int argc, char *argv[]){
 
 	printf ("send message to UDP echo server:\n");
 	fgets (buf, MAX, stdin);
+//send syn
+	printf ("send syn\n");
+	bzero (&send_packet, sizeof (send_packet));
+	send_packet.syn_flag = 1;
+	memcpy (&buf, &send_packet, sizeof (send_packet));
 	ret = sendto (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
 	check_for_error (ret, "sendto()");
 
+//send ack
+	printf ("send ack\n");
+	bzero (&send_packet, sizeof (send_packet));
+	send_packet.ack_flag = 1;
+	memcpy (&buf, &send_packet, sizeof (send_packet));
+	ret = sendto (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+/*
+	ret = sendto (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_server, slen);
+	check_for_error (ret, "sendto()");
+*/
 	ret = recvfrom (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
 	check_for_error (ret, "recvfrom()");
 
