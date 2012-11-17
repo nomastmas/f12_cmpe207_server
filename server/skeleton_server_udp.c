@@ -60,7 +60,7 @@ int main (void){
  		die ("bind()");
  	}
 	
-	int port = htons(CB[sockfd].sock_struct_UDP.sin_port);
+	int port = htons(CB[sockfd].sock_struct_UDP->sin_port);
  	printf ("== %s : %i ==\n", self_addr, port);
 //207 listen
 	cmpe207_listen(sockfd, 10);
@@ -70,7 +70,6 @@ int main (void){
 
 //207 accept
 	int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
-	printf("ssockfd %d", ssockfd);
 
 	printf("accept completed \n");
  	//run forever

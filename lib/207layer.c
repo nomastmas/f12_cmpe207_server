@@ -17,7 +17,7 @@ void check_for_error (int ret, char* s){
 	}
 }
 
-int get_tcp_state (int tcp_state, packet_header recv_header, char* msg){
+int get_tcp_state (int tcp_state, struct packet_header recv_header, char* msg){
 	switch (tcp_state){
 		case CLOSED:
 			if (strcmp (msg, "client") == 0){
@@ -145,5 +145,18 @@ int check_state(int sockfd, char* state){
 	return !(strcmp((char*)get_state_name(CB[sockfd].tcp_state), state));
 }
 
+int clear_flags(struct packet_header* packet)
+{
+	
+	packet->ns_flag  = 0;
+        packet->cwr_flag = 0;
+	packet->ece_flag = 0;
+        packet->urg_flag = 0;
+        packet->ack_flag = 0;
+        packet->psh_flag = 0;
+        packet->rst_flag = 0;
+        packet->syn_flag = 0;
+        packet->fin_flag = 0;
+}
 
 

@@ -15,6 +15,7 @@ enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_W
 int TCPStateMachine(int flag, int state);
 #endif
 
+#define DEBUG 0
 #define MAX_BUF_SIZE 256
 
 /*Calculates the checksum of the input buffer
@@ -483,8 +484,9 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	int i=0;
 	unsigned short tmp16=0;
 	unsigned int tmp32=0;
-		
+#if DEBUG		
 		printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
+#endif
 	/*Check for error*/			
 	if(pBuffer_in == NULL)
 	{
@@ -518,17 +520,19 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	pBuffer_in[20] = 0x40;
 
 #endif
-
+#if DEBUG
 	for(i=0;i<20;i++)
 	{
 		printf("%dbyte 0x%x,%u: ",i,pBuffer_in[i],pBuffer_in[i]);
 	}
 	printf("\n");
-
+#endif
 	/*Populate TCP header in TCB*/
 //	gTcp_Block[tcp_block_index_in].pTcpH  = (struct packet_header *) pBuffer_in;
 	tmp16 = (pBuffer_in[0] << 8) | (pBuffer_in[1]);
-		printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
+#if DEBUG	
+	printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
+#endif
 	CB[tcp_block_index_in].pTcpH->source_port = ntohs(tmp16);
 	
 	tmp16 = 0;
@@ -537,9 +541,9 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 
 	tmp32 = 0; tmp32 = ((pBuffer_in[4]&0xff) << 24) | ((pBuffer_in[5]&0xff) << 16) | ((pBuffer_in[6]&0xff) <<8) | (pBuffer_in[7]&0xff);
 	CB[tcp_block_index_in].pTcpH->seq_num = htonl(tmp32);
-	
+#if DEBUG	
 	printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
-
+#endif
 	
 	tmp32 = 0; tmp32 = ((pBuffer_in[8]&0xff)<<24) | ((pBuffer_in[9]&0xff) <<16) | ((pBuffer_in[10]&0xff) <<8) | (pBuffer_in[11]&0xff);
 	CB[tcp_block_index_in].pTcpH->ack_num = htonl(tmp32);
@@ -554,7 +558,9 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	gTcp_Block[tcp_block_index_in].pTcpH->reserved = (pBuffer_in[13] & 0x06) >> 1;
 #else //SB: CHECK ??????
 	tmp32 = ((pBuffer_in[12]&0xff) << 24) | ((pBuffer_in[13]&0xff) << 16) | ((pBuffer_in[14]&0xff) <<8) | (pBuffer_in[15]&0xff);
+#if DEBUG
 	printf("$$$$$$$$$$$$$$$$0x%x\n",tmp32);
+#endif
 	//gTcp_Block[tcp_block_index_in].pTcpH->data_offset = ((ntohl(tmp32))&0xff000000) >>24;
 	CB[tcp_block_index_in].pTcpH->data_offset = (((tmp32))&0xff000000) >>24;
 	
@@ -580,16 +586,17 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 
 	tmp16 = 0; tmp16 = ((pBuffer_in[18]&0xff)<<8) | (pBuffer_in[19]&0xff);
 	CB[tcp_block_index_in].pTcpH->urg_ptr =  htons(tmp16);
-	
+#if DEBUG	
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
+#endif
 	/*Fill the sequence number values in the TCB */
-//removing for now
-	//CB[tcp_block_index_in].pSeq->recvd_prev_seq_number = CB[tcp_block_index_in].pSeq->recvd_current_seq_number;
-	//CB[tcp_block_index_in].pSeq->recvd_current_seq_number = CB[tcp_block_index_in].pTcpH->seq_num;
+	CB[tcp_block_index_in].pSeq->recvd_prev_seq_number = CB[tcp_block_index_in].pSeq->recvd_current_seq_number;
+	CB[tcp_block_index_in].pSeq->recvd_current_seq_number = CB[tcp_block_index_in].pTcpH->seq_num;
 
+#if DEBUG //For testing and debug
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 
-#if 1 //For testing and debug
+
 
 		connect207_print_tcp_header(tcp_block_index_in);
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);

@@ -19,10 +19,13 @@ int cmpe207_socket(int ai_family, int ai_socktype, int ai_protocol)
 		{
 			sockfd_207 = check;
 			CB[sockfd_207].sock_in_use = 1;
+			
+			struct sockaddr_in *UDP = malloc (sizeof *UDP);
+			CB[sockfd_207].sock_struct_UDP = UDP;
 					
 //create UDP socket	
 			CB[sockfd_207].sockfd_udp = socket(PF_INET,SOCK_DGRAM, 0);
-				check_for_error(CB[sockfd_207].sockfd_udp,"no UDP socket available.\n");		
+			check_for_error(CB[sockfd_207].sockfd_udp,"no UDP socket available.\n");		
 			break;		
 		}
 	}

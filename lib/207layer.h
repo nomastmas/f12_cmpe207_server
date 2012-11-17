@@ -14,11 +14,7 @@
 //struct union definition of packet header
 
 // packet header
-
-typedef union {
-    char full_20_byte[20];
-    // assuming little endian other byte order is swapped
-    struct {
+  struct packet_header {
         unsigned short int source_port;
         unsigned short int dest_port;
         unsigned int       seq_num;
@@ -27,19 +23,30 @@ typedef union {
         unsigned int       reserved    : 2;
         unsigned int       ns_flag     : 1;
         unsigned int       cwr_flag    : 1;
-        unsigned int       ece_flag    : 1;
+	unsigned int       ece_flag    : 1;
         unsigned int       urg_flag    : 1;
         unsigned int       ack_flag    : 1;
         unsigned int       psh_flag    : 1;
         unsigned int       rst_flag    : 1;
         unsigned int       syn_flag    : 1;
         unsigned int       fin_flag    : 1;
-        unsigned short int window_size;
+	unsigned short int window_size;
         unsigned short int checksum;
         unsigned short int urg_ptr;
     }__attribute__((packed));
-} packet_header;
 
+struct sequence
+{
+	unsigned int send_first_seq_number;/*Seq number of first packet sent by sender that is the process itself*/
+	unsigned int send_current_seq_number; /*Seq number of current packet sent by sender that is the process itself*/
+	unsigned int send_prev_seq_number;/*Seq number of previous packet sent by sender that is the process itself*/
+
+/*Note that these received sequence numbers will be useful while assigning acknowledgement numbers to the outgoing packets*/
+	unsigned int recvd_first_seq_number;/*Seq number of first packet received by sender that is the process itself*/
+	unsigned int recvd_current_seq_number;/*Seq number of current packet received by sender that is the process itself*/
+	unsigned int recvd_prev_seq_number;/*Seq number of previous packet received by sender that is the process itself*/
+
+};
 
 void die (char *s);
 void check_for_error(int ret, char* s);
@@ -64,12 +71,15 @@ typedef struct
 	int sockfd_udp; 	//tracks udp sockets
 	unsigned short  cmpe207_port;     //htons(3490), 207 port #
 
-	struct sockaddr_in sock_struct_UDP;
+	struct sockaddr_in* sock_struct_UDP;
 
 	int tcp_state;
 	int queue_size;
+	
+	struct sequence *pSeq;
 	struct packet_header *pTcpH;	
 }Control_Block;
+
 
 extern Control_Block CB[MAX_SOCKET];
 
