@@ -159,4 +159,25 @@ int clear_flags(struct packet_header* packet)
         packet->fin_flag = 0;
 }
 
+void connect207_print_tcp_header2(struct packet_header* pTcpH)
+{
+	printf("Source Port\t\t%u,0x%x\n", 	pTcpH->source_port,	pTcpH->source_port);
+	printf("Dest Port\t\t%u,0x%x\n", 	pTcpH->dest_port, 	pTcpH->dest_port);
+	printf("Seq Num\t\t\t%u,0x%x\n", 	pTcpH->seq_num, 	pTcpH->seq_num);
+	printf("Ack Num\t\t\t%u,0x%x\n", 	pTcpH->ack_num, 	pTcpH->ack_num);
+	printf("Data Offset\t\t%u,0x%x\n", 	pTcpH->data_offset, 	pTcpH->data_offset);
+	printf("Reserved\t\t%u,0x%x\n", 	pTcpH->reserved, 	pTcpH->reserved);
+	printf("NS Flag\t\t\t%u,0x%x\n", 	pTcpH->ns_flag, 	pTcpH->ns_flag);
+	printf("CWR Flag\t\t%u,0x%x\n", 	pTcpH->cwr_flag, 	pTcpH->cwr_flag);
+	printf("ECE Flag\t\t%u,0x%x\n", 	pTcpH->ece_flag, 	pTcpH->ece_flag);
+	printf("URG Flag\t\t%u,0x%x\n", 	pTcpH->urg_flag, 	pTcpH->urg_flag);
+	printf("ACK Flag\t\t%u,0x%x\n", 	pTcpH->ack_flag, 	pTcpH->ack_flag);
+	printf("PSH Flag\t\t%u,0x%x\n", 	pTcpH->psh_flag, 	pTcpH->psh_flag);
+	printf("RST Flag\t\t%u,0x%x\n", 	pTcpH->rst_flag, 	pTcpH->rst_flag);
+	printf("SYN Flag\t\t%u,0x%x\n", 	pTcpH->syn_flag, 	pTcpH->syn_flag);
+	printf("FIN Flag\t\t%u,0x%x\n", 	pTcpH->fin_flag, 	pTcpH->fin_flag);
+	printf("Window Size\t\t%u,0x%x\n", 	pTcpH->window_size, 	pTcpH->window_size);
+	printf("Checksum\t\t%u,0x%x\n", 	pTcpH->checksum, 	pTcpH->checksum);
+	printf("Urgent Ptr\t\t%u,0x%x\n", 	pTcpH->urg_ptr, 	pTcpH->urg_ptr);
 
+}

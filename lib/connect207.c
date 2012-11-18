@@ -12,10 +12,10 @@
 
 #if 1 //remove
 enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
+	
 int TCPStateMachine(int flag, int state);
 #endif
 
-#define DEBUG 0
 #define MAX_BUF_SIZE 256
 
 /*Calculates the checksum of the input buffer
@@ -595,10 +595,11 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 
 #if DEBUG //For testing and debug
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
-
+#endif
 
 
 		connect207_print_tcp_header(tcp_block_index_in);
+#if DEBUG
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 #endif
 	return TCP207_SUCCESS;
@@ -626,8 +627,5 @@ void connect207_print_tcp_header(int tcp_block_index_in)
 	printf("Window Size\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->window_size, 	CB[tcp_block_index_in].pTcpH->window_size);
 	printf("Checksum\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->checksum, 	CB[tcp_block_index_in].pTcpH->checksum);
 	printf("Urgent Ptr\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->urg_ptr, 		CB[tcp_block_index_in].pTcpH->urg_ptr);
-
-
-
 
 }

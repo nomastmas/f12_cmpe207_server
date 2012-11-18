@@ -10,7 +10,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-
+#define DEBUG 0
+#define DEMO 1
 //struct union definition of packet header
 
 // packet header
