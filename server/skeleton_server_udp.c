@@ -18,6 +18,9 @@
 #define MAX		512
 #define PORT 	9999
 
+Control_Block CB[MAX_SOCKET] = {0};
+int cmpe207_port_in_use [MAX_PORT] = {0};
+
 struct t_data{
 	int fd;
 	char* buffer;
@@ -29,54 +32,63 @@ struct t_data{
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
 
-//enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
 
 int main (void){
 	printf ("...booting up...\n");
 
 	struct sockaddr_in s_server, s_client;
-	int sockfd, ret, slen, tcp_state;
+	int sockfd, ret, slen, t_good;
 	char buf[MAX];
 	struct t_data rw_data;
 	pthread_t t_id;
 	char self_addr[INET_ADDRSTRLEN];
 
 	slen = sizeof(s_client);
-
-	sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+//207 socket
+	sockfd = cmpe207_socket(CMPE207_FAM, CMPE207_SOC, CMPE207_PROC);
 	if (sockfd < 0) {
 		die ("socket()");
 	}
 
-	memset((char *) &s_server, 0, sizeof(s_server));
-	s_server.sin_family = AF_INET;
- 	s_server.sin_port = htons(PORT);
- 	s_server.sin_addr.s_addr = htonl(INADDR_ANY);	
- 	if (bind (sockfd, (struct sockaddr*) &s_server, sizeof(s_server)) < 0){
- 		die ("bind()");
- 	}
-
  	get_self_ip (self_addr);
 
- 	printf ("== %s %i ==\n", self_addr, PORT);
- 	printf ("...waiting for clients...\n");
+	memset((char *) &s_server, 0, sizeof(s_server));
+	s_server.sin_family = AF_INET;
+  	inet_pton(AF_INET, self_addr, &(s_server.sin_addr));
+//207 bind	
+ 	if (cmpe207_bind(sockfd, &s_server, sizeof s_server) < 0){
+ 		die ("bind()");
+ 	}
+	
+	int port = htons(CB[sockfd].sock_struct_UDP->sin_port);
+ 	printf ("== %s : %i ==\n", self_addr, port);
+//207 listen
+	cmpe207_listen(sockfd, 10);
+ 	
+	int sockfd_udp = CB[sockfd].sockfd_udp;
+	printf ("...waiting for clients...\n");
 
-	packet_header recv_header, send_header;
-
-	tcp_state = LISTEN;
+//207 accept
+	int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
+	printf("accept completed \n");
  	//run forever
  	for(;;){
- 		ret = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
- 		memcpy (&recv_header, &buf, sizeof (packet_header));
- 		if (tcp_state == CLOSE_WAIT)
- 			tcp_state = get_tcp_state (tcp_state, recv_header, "close");
- 		else
- 			tcp_state = get_tcp_state (tcp_state, recv_header, "");
- 		printf ("%s\n", get_state_name (tcp_state));
+
+ 		ret = recvfrom (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		check_for_error (ret, "recvfrom()");
+
+		rw_data.fd = sockfd_udp;
+		rw_data.buffer = buf;
+		rw_data.client = &s_client;
+		rw_data.slen = slen;
+		rw_data.ret = ret;
+
+		ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
+		check_for_error(ret, "pthread_create()");
  	}
 
- 	close (sockfd);
-	//pthread_exit(NULL);
+ 	close (sockfd_udp);
+	pthread_exit(NULL);
  	return 0;
 }
 
@@ -93,13 +105,14 @@ void get_self_ip (char* addressBuffer){
         	// only IPv4 address
             tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
 
-            if (strcmp(ifa->ifa_name, "en0") == 0 
-            	|| strcmp(ifa->ifa_name, "eth0") == 0){
+            if (!strcmp(ifa->ifa_name, "en0") == 0 
+            	|| !strcmp(ifa->ifa_name, "eth0") == 0){
                 inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);    
             	//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);     
             }  
         } 
     }
+
     if (ifAddrStruct!=NULL) 
     	freeifaddrs(ifAddrStruct);
 }

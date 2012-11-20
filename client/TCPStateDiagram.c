@@ -133,7 +133,7 @@ int i = 0;
 		return -1;
 	}
 	return state;
-}
+}/*
 int main(void)
 {
 	char*flagchar[] = {"fin", "syn", "rst", "push", "ack", "urg"};
@@ -159,4 +159,4 @@ int main(void)
 		}
 	}
 	return 0;
-}
+}*/
