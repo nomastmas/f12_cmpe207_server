@@ -70,7 +70,6 @@ int main (void){
 
 //207 accept
 	int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
-
 	printf("accept completed \n");
  	//run forever
  	for(;;){
