@@ -142,7 +142,7 @@ char* get_state_name (int tcp_state){
 }
 
 int check_state(int sockfd, char* state){
-	return !(strcmp((char*)get_state_name(CB[sockfd].tcp_state), state));
+	return !(strcmp((char*)get_state_name(gTcp_Block[sockfd].tcp_current_state), state));
 }
 
 int clear_flags(struct packet_header* packet)

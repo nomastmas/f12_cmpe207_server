@@ -7,9 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include "connect207.h"
 
-//#include "../lib/207layer.h"
+#include "../lib/207layer.h"
 #if 1
 int main(int argc, char *argv[] )
 {
@@ -67,7 +66,7 @@ int main(int argc, char *argv[] )
 		printf("socket()\n");
 	}	
 
-	gTcp_Block[aIndex].sockfd = sockfd;
+	gTcp_Block[aIndex].sockfd_udp = sockfd;
 
 #if 0 //testing Just to fill in values from wirehark SYN
 	memset(pBuffer_in, 0, sizeof(struct packet_header));
@@ -104,14 +103,14 @@ int main(int argc, char *argv[] )
 	}
 
 	printf ("send message to echo server:\n");
-	fgets (buf, MAX, stdin);
-	retVal = sendto (sockfd, buf, MAX, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, slen);
+	fgets (buf, MAX_BUF_SIZE, stdin);
+	retVal = sendto (sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, slen);
 	if (ret < 0){
 	//	die ("sendto()");
 		printf("sendto() failed.");
 	}
 
-	retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, &slen);
+	retVal = recvfrom (sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, &slen);
 	if (ret < 0){
 	//	die ("recvfrom()");
 		printf("recvfrom() failed.");

@@ -10,8 +10,46 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#define DEBUG 0
-#define DEMO 1
+
+#define TCP207_SUCCESS 0	/*generic success*/
+#define TCP207_ERROR 2	/*generic error*/
+#define TCP207_ERROR_NULL_POINTER 3 /*NULL pointer not expected error*/
+#define TCP207_CONNECT_WRONG_3WAY_RESPONSE /*Not a valid respnse in 3way handshake*/
+
+#define CONNECT207_SYN 0 	/*SYN state*/
+#define CONNECT207_SYN_ACK 1 	/*SYN| ACK state*/
+#define CONNECT207_ACK 2 	/*ACK state*/
+#define MAX_TCB_SIZE 10
+
+#define SOURCE_PORT 9000
+
+#define MAX_BUF_SIZE 256
+
+struct myTcpBlock
+{
+
+	int sock_in_use; 	// socket in use = 1; ready = 0;
+	int sockfd_udp; 	//tracks udp sockets
+	unsigned short  cmpe207_port;     //htons(3490), 207 port #
+
+	int queue_size;
+	
+	struct sockaddr_in *pSocket_info;
+	struct packet_header *pTcpH;
+	struct packet_header *pSentTcpH;
+	struct sequence *pSeq;
+	int tcp_current_state;
+	int tcp_prev_state;
+
+};
+
+struct myTcpBlock gTcp_Block[MAX_TCB_SIZE];
+
+void connect207_print_tcp_header(int tcp_block_index_in);
+int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_in );
+
+#define DEBUG 1
+
 //struct union definition of packet header
 
 // packet header
@@ -51,6 +89,8 @@ struct sequence
 
 void die (char *s);
 void check_for_error(int ret, char* s);
+int get_tcp_state (int tcp_state, struct packet_header recv_header, char* msg);
+char* get_state_name (int tcp_state);
 
 #define BACKLOG 10
 #define CMPE207_SOC 1
@@ -65,7 +105,7 @@ void check_for_error(int ret, char* s);
 
 //tracks 207 ports in use: ready = 0 , in use = 1
 extern int cmpe207_port_in_use[MAX_PORT];
-
+/*
 typedef struct 
 {
 	int sock_in_use; 	// socket in use = 1; ready = 0;
@@ -83,7 +123,7 @@ typedef struct
 
 
 extern Control_Block CB[MAX_SOCKET];
-
+*/
 // TCP functions
 
 /*
@@ -96,7 +136,7 @@ extern int cmpe207_socket(int ai_family, int ai_socktype, int ai_protocol);
 
 /*
 cmpe207_bind
-	Function: 	- copies own IP, port, and family to sock_struct_UDP
+	Function: 	- copies own IP, port, and family to pSocket_info
 			- assigns UDP and 207 port #
 	Returns:	- UDP bind error code
 */

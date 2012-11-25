@@ -7,7 +7,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include "connect207.h"
 #include "207layer.h"
 
 #if 1 //remove
@@ -16,7 +15,6 @@ enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_W
 int TCPStateMachine(int flag, int state);
 #endif
 
-#define MAX_BUF_SIZE 256
 
 /*Calculates the checksum of the input buffer
 unsigned short* pBuffer_in: buffer whose checksum is to be found out 
@@ -378,6 +376,7 @@ int connect207(int tcp_block_index_in )
 	/*SYN*/
 	printf ("@@@@@@@ SYN packet @@@@@@\n");
 	aTcpState = CONNECT207_SYN;
+
 	retVal = connect207_tcp_3way_response_header_fill(tcp_block_index_in, aTcpState);
 	if(retVal != TCP207_SUCCESS)
 	{
@@ -386,7 +385,7 @@ int connect207(int tcp_block_index_in )
 	}
 
 	/*Send the first SYN packet*/
-	retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), sizeof(struct sockaddr_in));
+	retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd_udp, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), sizeof(struct sockaddr_in));
 	if(retVal == -1)
 	{
 		printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
@@ -402,7 +401,7 @@ int connect207(int tcp_block_index_in )
 		printf ("Success sendto() retVal= %d\n",retVal);
 	}
 
-	retVal = recvfrom (gTcp_Block[tcp_block_index_in].sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), &slen);
+	retVal = recvfrom (gTcp_Block[tcp_block_index_in].sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), &slen);
 	if(retVal == -1)
 	{
 		printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
@@ -419,6 +418,7 @@ int connect207(int tcp_block_index_in )
 	}
 
 	retVal = tcp_header_extract_from_recv_packet(tcp_block_index_in, buf);
+
 	if(retVal != TCP207_SUCCESS)
 	{
 		printf("Error: Returned from connect207_check_3way_retesponse_packet()\n");
@@ -455,7 +455,7 @@ int connect207(int tcp_block_index_in )
 
 	/*Send the first ACK packet*/
 	printf ("sendto()\n");
-	retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)gTcp_Block[ tcp_block_index_in].pSocket_info, slen);
+	retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd_udp, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)gTcp_Block[ tcp_block_index_in].pSocket_info, slen);
 	if(retVal == -1)
 	{
 		printf ("1111Error: sendto() retVal111 == -1 %s\n",strerror(errno));
@@ -533,20 +533,20 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 #if DEBUG	
 	printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
 #endif
-	CB[tcp_block_index_in].pTcpH->source_port = ntohs(tmp16);
+	gTcp_Block[tcp_block_index_in].pTcpH->source_port = ntohs(tmp16);
 	
 	tmp16 = 0;
 	tmp16 = (pBuffer_in[2] << 8) | (pBuffer_in[3]);
-	CB[tcp_block_index_in].pTcpH->dest_port = ntohs(tmp16);
+	gTcp_Block[tcp_block_index_in].pTcpH->dest_port = ntohs(tmp16);
 
 	tmp32 = 0; tmp32 = ((pBuffer_in[4]&0xff) << 24) | ((pBuffer_in[5]&0xff) << 16) | ((pBuffer_in[6]&0xff) <<8) | (pBuffer_in[7]&0xff);
-	CB[tcp_block_index_in].pTcpH->seq_num = htonl(tmp32);
+	gTcp_Block[tcp_block_index_in].pTcpH->seq_num = htonl(tmp32);
 #if DEBUG	
 	printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 #endif
 	
 	tmp32 = 0; tmp32 = ((pBuffer_in[8]&0xff)<<24) | ((pBuffer_in[9]&0xff) <<16) | ((pBuffer_in[10]&0xff) <<8) | (pBuffer_in[11]&0xff);
-	CB[tcp_block_index_in].pTcpH->ack_num = htonl(tmp32);
+	gTcp_Block[tcp_block_index_in].pTcpH->ack_num = htonl(tmp32);
 
 #if 0
 	tmp16 =0; tmp16 = ntohs(((pBuffer_in[12]&0xff)>>3)) ;
@@ -562,36 +562,36 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	printf("$$$$$$$$$$$$$$$$0x%x\n",tmp32);
 #endif
 	//gTcp_Block[tcp_block_index_in].pTcpH->data_offset = ((ntohl(tmp32))&0xff000000) >>24;
-	CB[tcp_block_index_in].pTcpH->data_offset = (((tmp32))&0xff000000) >>24;
+	gTcp_Block[tcp_block_index_in].pTcpH->data_offset = (((tmp32))&0xff000000) >>24;
 	
 #endif
 
-	CB[tcp_block_index_in].pTcpH->ns_flag = (pBuffer_in[12] & 0x01);
+	gTcp_Block[tcp_block_index_in].pTcpH->ns_flag = (pBuffer_in[12] & 0x01);
 
-	CB[tcp_block_index_in].pTcpH->cwr_flag = ((pBuffer_in[13]) & 0x01) >> 0;
-	CB[tcp_block_index_in].pTcpH->ece_flag = (pBuffer_in[13] & 0x02) >> 1;
-	CB[tcp_block_index_in].pTcpH->urg_flag =  (pBuffer_in[13] & 0x04) >> 2;
-	CB[tcp_block_index_in].pTcpH->ack_flag = (pBuffer_in[13] & 0x08) >> 3;
-	CB[tcp_block_index_in].pTcpH->psh_flag = (pBuffer_in[13] & 0x10) >> 4;
-	CB[tcp_block_index_in].pTcpH->rst_flag = (pBuffer_in[13] & 0x20) >> 5;
-	CB[tcp_block_index_in].pTcpH->syn_flag = (pBuffer_in[13] & 0x40) >> 6;
-	CB[tcp_block_index_in].pTcpH->fin_flag = (pBuffer_in[13] & 0x80) >> 7;
+	gTcp_Block[tcp_block_index_in].pTcpH->cwr_flag = ((pBuffer_in[13]) & 0x01) >> 0;
+	gTcp_Block[tcp_block_index_in].pTcpH->ece_flag = (pBuffer_in[13] & 0x02) >> 1;
+	gTcp_Block[tcp_block_index_in].pTcpH->urg_flag =  (pBuffer_in[13] & 0x04) >> 2;
+	gTcp_Block[tcp_block_index_in].pTcpH->ack_flag = (pBuffer_in[13] & 0x08) >> 3;
+	gTcp_Block[tcp_block_index_in].pTcpH->psh_flag = (pBuffer_in[13] & 0x10) >> 4;
+	gTcp_Block[tcp_block_index_in].pTcpH->rst_flag = (pBuffer_in[13] & 0x20) >> 5;
+	gTcp_Block[tcp_block_index_in].pTcpH->syn_flag = (pBuffer_in[13] & 0x40) >> 6;
+	gTcp_Block[tcp_block_index_in].pTcpH->fin_flag = (pBuffer_in[13] & 0x80) >> 7;
 
 
 	tmp16 =0; tmp16 = ((pBuffer_in[14]&0xff)<<8) | (pBuffer_in[15]&0xff);
-	CB[tcp_block_index_in].pTcpH->window_size	= htons(tmp16);
+	gTcp_Block[tcp_block_index_in].pTcpH->window_size	= htons(tmp16);
 
 	tmp16 = 0; tmp16 = ((pBuffer_in[16]&0xff)<<8) | (pBuffer_in[17]&0xff);
-	CB[tcp_block_index_in].pTcpH->checksum =  htons(tmp16);
+	gTcp_Block[tcp_block_index_in].pTcpH->checksum =  htons(tmp16);
 
 	tmp16 = 0; tmp16 = ((pBuffer_in[18]&0xff)<<8) | (pBuffer_in[19]&0xff);
-	CB[tcp_block_index_in].pTcpH->urg_ptr =  htons(tmp16);
+	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr =  htons(tmp16);
 #if DEBUG	
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 #endif
 	/*Fill the sequence number values in the TCB */
-	CB[tcp_block_index_in].pSeq->recvd_prev_seq_number = CB[tcp_block_index_in].pSeq->recvd_current_seq_number;
-	CB[tcp_block_index_in].pSeq->recvd_current_seq_number = CB[tcp_block_index_in].pTcpH->seq_num;
+	gTcp_Block[tcp_block_index_in].pSeq->recvd_prev_seq_number = gTcp_Block[tcp_block_index_in].pSeq->recvd_current_seq_number;
+	gTcp_Block[tcp_block_index_in].pSeq->recvd_current_seq_number = gTcp_Block[tcp_block_index_in].pTcpH->seq_num;
 
 #if DEBUG //For testing and debug
 		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
@@ -609,23 +609,23 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 /*Prints the TCP Header*/
 void connect207_print_tcp_header(int tcp_block_index_in)
 {
-	printf("Source Port\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->source_port,	CB[tcp_block_index_in].pTcpH->source_port);
-	printf("Dest Port\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->dest_port, 	CB[tcp_block_index_in].pTcpH->dest_port);
-	printf("Seq Num\t\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->seq_num, 		CB[tcp_block_index_in].pTcpH->seq_num);
-	printf("Ack Num\t\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->ack_num, 		CB[tcp_block_index_in].pTcpH->ack_num);
-	printf("Data Offset\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->data_offset, 	CB[tcp_block_index_in].pTcpH->data_offset);
-	printf("Reserved\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->reserved, 	CB[tcp_block_index_in].pTcpH->reserved);
-	printf("NS Flag\t\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->ns_flag, 		CB[tcp_block_index_in].pTcpH->ns_flag);
-	printf("CWR Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->cwr_flag, 	CB[tcp_block_index_in].pTcpH->cwr_flag);
-	printf("ECE Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->ece_flag, 	CB[tcp_block_index_in].pTcpH->ece_flag);
-	printf("URG Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->urg_flag, 	CB[tcp_block_index_in].pTcpH->urg_flag);
-	printf("ACK Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->ack_flag, 	CB[tcp_block_index_in].pTcpH->ack_flag);
-	printf("PSH Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->psh_flag, 	CB[tcp_block_index_in].pTcpH->psh_flag);
-	printf("RST Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->rst_flag, 	CB[tcp_block_index_in].pTcpH->rst_flag);
-	printf("SYN Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->syn_flag, 	CB[tcp_block_index_in].pTcpH->syn_flag);
-	printf("FIN Flag\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->fin_flag, 	CB[tcp_block_index_in].pTcpH->fin_flag);
-	printf("Window Size\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->window_size, 	CB[tcp_block_index_in].pTcpH->window_size);
-	printf("Checksum\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->checksum, 	CB[tcp_block_index_in].pTcpH->checksum);
-	printf("Urgent Ptr\t\t%u,0x%x\n", 	CB[tcp_block_index_in].pTcpH->urg_ptr, 		CB[tcp_block_index_in].pTcpH->urg_ptr);
+	printf("Source Port\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->source_port,	gTcp_Block[tcp_block_index_in].pTcpH->source_port);
+	printf("Dest Port\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->dest_port, 	gTcp_Block[tcp_block_index_in].pTcpH->dest_port);
+	printf("Seq Num\t\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->seq_num, 		gTcp_Block[tcp_block_index_in].pTcpH->seq_num);
+	printf("Ack Num\t\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->ack_num, 		gTcp_Block[tcp_block_index_in].pTcpH->ack_num);
+	printf("Data Offset\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->data_offset, 	gTcp_Block[tcp_block_index_in].pTcpH->data_offset);
+	printf("Reserved\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->reserved, 	gTcp_Block[tcp_block_index_in].pTcpH->reserved);
+	printf("NS Flag\t\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->ns_flag, 		gTcp_Block[tcp_block_index_in].pTcpH->ns_flag);
+	printf("CWR Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->cwr_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->cwr_flag);
+	printf("ECE Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->ece_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->ece_flag);
+	printf("URG Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->urg_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->urg_flag);
+	printf("ACK Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->ack_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->ack_flag);
+	printf("PSH Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->psh_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->psh_flag);
+	printf("RST Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->rst_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->rst_flag);
+	printf("SYN Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->syn_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->syn_flag);
+	printf("FIN Flag\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->fin_flag, 	gTcp_Block[tcp_block_index_in].pTcpH->fin_flag);
+	printf("Window Size\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->window_size, 	gTcp_Block[tcp_block_index_in].pTcpH->window_size);
+	printf("Checksum\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->checksum, 	gTcp_Block[tcp_block_index_in].pTcpH->checksum);
+	printf("Urgent Ptr\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr, 		gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr);
 
 }

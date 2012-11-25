@@ -15,10 +15,7 @@
 
 #include "../lib/207layer.h"
 
-#define MAX		512
-#define PORT 	9999
 
-Control_Block CB[MAX_SOCKET] = {0};
 int cmpe207_port_in_use [MAX_PORT] = {0};
 
 struct t_data{
@@ -38,7 +35,7 @@ int main (void){
 
 	struct sockaddr_in s_server, s_client;
 	int sockfd, ret, slen, t_good;
-	char buf[MAX];
+	char buf[MAX_BUF_SIZE];
 	struct t_data rw_data;
 	pthread_t t_id;
 	char self_addr[INET_ADDRSTRLEN];
@@ -60,12 +57,12 @@ int main (void){
  		die ("bind()");
  	}
 	
-	int port = htons(CB[sockfd].sock_struct_UDP->sin_port);
+	int port = htons(gTcp_Block[sockfd].pSocket_info->sin_port);
  	printf ("== %s : %i ==\n", self_addr, port);
 //207 listen
 	cmpe207_listen(sockfd, 10);
  	
-	int sockfd_udp = CB[sockfd].sockfd_udp;
+	int sockfd_udp = gTcp_Block[sockfd].sockfd_udp;
 	printf ("...waiting for clients...\n");
 
 //207 accept
@@ -74,7 +71,7 @@ int main (void){
  	//run forever
  	for(;;){
 
- 		ret = recvfrom (sockfd_udp, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
+ 		ret = recvfrom (sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)&s_client, &slen);
  		check_for_error (ret, "recvfrom()");
 
 		rw_data.fd = sockfd_udp;

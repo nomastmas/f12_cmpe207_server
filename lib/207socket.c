@@ -15,17 +15,17 @@ int cmpe207_socket(int ai_family, int ai_socktype, int ai_protocol)
 
 	for(check = 0; check < MAX_SOCKET; check++)
 	{
-		if(CB[check].sock_in_use ==0) //if found one that is open
+		if(gTcp_Block[check].sock_in_use ==0) //if found one that is open
 		{
 			sockfd_207 = check;
-			CB[sockfd_207].sock_in_use = 1;
+			gTcp_Block[sockfd_207].sock_in_use = 1;
 			
 			struct sockaddr_in *UDP = malloc (sizeof *UDP);
-			CB[sockfd_207].sock_struct_UDP = UDP;
+			gTcp_Block[sockfd_207].pSocket_info = UDP;
 					
 //create UDP socket	
-			CB[sockfd_207].sockfd_udp = socket(PF_INET,SOCK_DGRAM, 0);
-			check_for_error(CB[sockfd_207].sockfd_udp,"no UDP socket available.\n");		
+			gTcp_Block[sockfd_207].sockfd_udp = socket(PF_INET,SOCK_DGRAM, 0);
+			check_for_error(gTcp_Block[sockfd_207].sockfd_udp,"no UDP socket available.\n");		
 			break;		
 		}
 	}
