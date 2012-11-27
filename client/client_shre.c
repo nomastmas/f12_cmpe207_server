@@ -7,11 +7,19 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include "207layer.h"
+#include "connect207.h"
 
-#include "../lib/207layer.h"
+
+#define MAX_BUF_SIZE 256
+#define MAX 256
+#define SOURCE_PORT 9000
+
+
 #if 1
 int main(int argc, char *argv[] )
 {
+
 	int retVal = 0;
 	int sockfd, ret, slen;
 	char buf[MAX_BUF_SIZE];
@@ -23,6 +31,7 @@ int main(int argc, char *argv[] )
 	struct packet_header aTcpH;
 	struct sequence aSeq;
 	int aIndex=0;
+	int aIsItClient= 1;
 
 	if ( argc != 3 ){
 		printf("usage: client hostname\n");
@@ -66,7 +75,7 @@ int main(int argc, char *argv[] )
 		printf("socket()\n");
 	}	
 
-	gTcp_Block[aIndex].sockfd_udp = sockfd;
+	gTcp_Block[aIndex].sockfd = sockfd;
 
 #if 0 //testing Just to fill in values from wirehark SYN
 	memset(pBuffer_in, 0, sizeof(struct packet_header));
@@ -95,30 +104,19 @@ int main(int argc, char *argv[] )
 
 #endif
 	printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, aIndex);
-	retVal=connect207(aIndex );
+	aIsItClient = 1;
+	retVal=connect207(aIndex, aIsItClient);
 	if(retVal != TCP207_SUCCESS)
 	{
 		printf("connect207() returned with error\n");
 		return -1;
 	}
-
-	printf ("send message to echo server:\n");
-	fgets (buf, MAX_BUF_SIZE, stdin);
-	retVal = sendto (sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, slen);
-	if (ret < 0){
-	//	die ("sendto()");
-		printf("sendto() failed.");
-	}
-
-	retVal = recvfrom (sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)gTcp_Block[aIndex].pSocket_info, &slen);
-	if (ret < 0){
-	//	die ("recvfrom()");
-		printf("recvfrom() failed.");
-	}
 	
-	sleep(20);
-	printf ("==response==\n%s\n", buf);
 
+	
+
+	//sleep(20);
+	printf ("==response==%s\n", buf);
 	printf ("goodbye.\n");
 
 	close (sockfd);
