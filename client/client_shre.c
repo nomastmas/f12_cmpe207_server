@@ -7,8 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include "207layer.h"
-#include "connect207.h"
+#include "../lib/207layer.h"
+#include "../lib/connect207.h"
 
 
 #define MAX_BUF_SIZE 256
@@ -75,7 +75,7 @@ int main(int argc, char *argv[] )
 		printf("socket()\n");
 	}	
 
-	gTcp_Block[aIndex].sockfd = sockfd;
+	gTcp_Block[aIndex].sockfd_udp = sockfd;
 
 #if 0 //testing Just to fill in values from wirehark SYN
 	memset(pBuffer_in, 0, sizeof(struct packet_header));
