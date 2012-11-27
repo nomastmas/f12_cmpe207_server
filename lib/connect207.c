@@ -426,7 +426,7 @@ int connect207(int tcp_block_index_in, int clientOrServer_in )
 		}
 
 		/*Send the packet*/
-		retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), sizeof(struct sockaddr_in));
+		retVal = sendto (gTcp_Block[tcp_block_index_in].sockfd_udp, gTcp_Block[tcp_block_index_in].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), sizeof(struct sockaddr_in));
 		if(retVal == -1)
 		{
 			printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
@@ -453,7 +453,7 @@ int connect207(int tcp_block_index_in, int clientOrServer_in )
 
 	
 	
-		retVal = recvfrom (gTcp_Block[tcp_block_index_in].sockfd, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), &slen); //SB: Handle retarnsmission by using timeout
+		retVal = recvfrom (gTcp_Block[tcp_block_index_in].sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), &slen); //SB: Handle retarnsmission by using timeout
 		if(retVal == -1)
 		{
 			printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno)); //SB: Handle retransmission
