@@ -4,7 +4,6 @@
 
 #include "207layer.h"
 
-enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_WAIT, FIN_WAIT_2, CLOSING, LAST_ACK, TIME_WAIT};
 
 void die (char *s){
 	perror(s);
