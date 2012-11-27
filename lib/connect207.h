@@ -18,3 +18,4 @@
 void connect207_print_tcp_header(int tcp_block_index_in);
 
 int connect207(int tcp_block_index_in, int clientOrServer_in  );
+#endif
