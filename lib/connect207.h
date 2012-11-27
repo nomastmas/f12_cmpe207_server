@@ -14,6 +14,7 @@
 #define MAX_TCB_SIZE 10
 
 
+int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_in );
 
 void connect207_print_tcp_header(int tcp_block_index_in);
 
