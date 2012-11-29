@@ -58,7 +58,7 @@ int main (void){
  	}
 	
 	int port = htons(gTcp_Block[sockfd].pSocket_info->sin_port);
- 	printf ("== %s : %i ==\n", self_addr, port);
+ 	printf ("== %s %i ==\n", self_addr, port);
 //207 listen
 	cmpe207_listen(sockfd, 10);
  	
