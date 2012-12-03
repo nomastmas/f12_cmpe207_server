@@ -18,17 +18,7 @@
 
 int cmpe207_port_in_use [MAX_PORT] = {0};
 
-struct t_data{
-	int fd;
-	char* buffer;
-	struct sockaddr_in* client;
-	int slen;
-	int ret;
-};
-
 void get_self_ip (char* addressBuffer);
-void* rw (void * data);
-
 
 int main (void){
 	printf ("...booting up...\n");
@@ -36,8 +26,6 @@ int main (void){
 	struct sockaddr_in s_server, s_client;
 	int sockfd, ret, slen, t_good;
 	char buf[MAX_BUF_SIZE];
-	struct t_data rw_data;
-	pthread_t t_id;
 	char self_addr[INET_ADDRSTRLEN];
 
 	slen = sizeof(s_client);
@@ -63,29 +51,21 @@ int main (void){
 	cmpe207_listen(sockfd, 10);
  	
 	int sockfd_udp = gTcp_Block[sockfd].sockfd_udp;
-	printf ("...waiting for clients...\n");
 
-//207 accept
-	int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
-	printf("accept completed \n");
  	//run forever
  	for(;;){
+		
+		printf ("=====NEW CONNECTION!!!=====\n");
+		printf ("...waiting for clients...\n");
 
- 		ret = recvfrom (sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)&s_client, &slen);
- 		check_for_error (ret, "recvfrom()");
+//207 accept
+		int ssockfd = cmpe207_accept(sockfd, &s_server, &slen);
+		printf("accept completed \n");
 
-		rw_data.fd = sockfd_udp;
-		rw_data.buffer = buf;
-		rw_data.client = &s_client;
-		rw_data.slen = slen;
-		rw_data.ret = ret;
-
-		ret = pthread_create(&t_id, NULL, rw, (void*)&rw_data);
-		check_for_error(ret, "pthread_create()");
+		printf ("goodbye.\n\n\n\n\n");
  	}
 
  	close (sockfd_udp);
-	pthread_exit(NULL);
  	return 0;
 }
 
@@ -114,25 +94,3 @@ void get_self_ip (char* addressBuffer){
     	freeifaddrs(ifAddrStruct);
 }
 
-void *rw(void * data){
-	
-	struct t_data* rw_data = (struct t_data*) data;
-	int sockfd = rw_data->fd;
-	int slen = rw_data->slen;
-	int port, ret;
-	char* buf = rw_data->buffer;
-	struct sockaddr_in* s_client = rw_data->client;
-	char ip_addr[INET_ADDRSTRLEN];
-	
-	inet_ntop (AF_INET, &(s_client->sin_addr), ip_addr, INET_ADDRSTRLEN);
-	port = ntohs (s_client->sin_port);
-
-	printf ("==Received packet from %s:%d==\n %s\n", 
-			ip_addr,
-			port, 
-			buf
-	);
-	
-	ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)s_client, slen);
-	check_for_error (ret, "sendto()");
-}

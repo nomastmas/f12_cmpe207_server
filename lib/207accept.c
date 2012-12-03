@@ -5,13 +5,15 @@
 
 int cmpe207_accept(int sockfd, struct sockaddr_in *addr, socklen_t * addrlen)
 {
+	char ip_addr[INET_ADDRSTRLEN];
+	int port;
+
 //error checking: check sockfd IN USE, in LISTEN state
 	if(!gTcp_Block[sockfd].sock_in_use)
 		die("accept(): socket not in use.");
 	if(!check_state(sockfd, "LISTEN"))
 		die("accept(): not in LISTEN state.");
 
-//create slave socket
 	int ssockfd;
 	char self_addr[INET_ADDRSTRLEN];
 	char * str;	
@@ -44,6 +46,11 @@ int cmpe207_accept(int sockfd, struct sockaddr_in *addr, socklen_t * addrlen)
 	while(!check_state(ssockfd, "ESTABLISHED") && check_state(sockfd, "LISTEN"))	
 	{
 		rv = recvfrom (gTcp_Block[sockfd].sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)&s_client, &slen);
+
+		inet_ntop (AF_INET, &(s_client.sin_addr), ip_addr, INET_ADDRSTRLEN);
+		port = ntohs (s_client.sin_port);
+
+		printf ("==Client from %s:%d==\n", ip_addr, port);
 
 		if(rv <= 0)
 		{
