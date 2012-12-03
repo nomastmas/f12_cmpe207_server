@@ -347,7 +347,7 @@ int connect207_tcp_3way_response_header_fill(int tcp_block_index_in, int tcp_sta
 #endif
 #if 1 //For testing and debug
 		connect207_print_tcp_header(tcp_block_index_in);
-		printf("%s: %d:Exit\n",__FUNCTION__,__LINE__);
+		//printf("%s: %d:Exit\n",__FUNCTION__,__LINE__);
 #endif
 	return TCP207_SUCCESS;
 }
@@ -493,10 +493,7 @@ int connect207(int tcp_block_index_in, int clientOrServer_in )
 		
 	}while(!aExit);
 
-	printf("EXIT() connect207 with success\n");
-
-
-
+	printf("=====ESTABLISHED=====\n");
 	return TCP207_SUCCESS;
 
 }
@@ -627,6 +624,7 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 /*Prints the TCP Header*/
 void connect207_print_tcp_header(int tcp_block_index_in)
 {
+	printf("+++++Packet Header+++++\n");
 	printf("Source Port\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->source_port,gTcp_Block[tcp_block_index_in].pTcpH->source_port);
 	printf("Dest Port\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->dest_port, 	gTcp_Block[tcp_block_index_in].pTcpH->dest_port);
 	printf("Seq Num\t\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->seq_num, 	gTcp_Block[tcp_block_index_in].pTcpH->seq_num);
@@ -645,6 +643,7 @@ void connect207_print_tcp_header(int tcp_block_index_in)
 	printf("Window Size\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->window_size, 	gTcp_Block[tcp_block_index_in].pTcpH->window_size);
 	printf("Checksum\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->checksum, 	gTcp_Block[tcp_block_index_in].pTcpH->checksum);
 	printf("Urgent Ptr\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr, 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr);
+	printf("+++++++++++++++++++++++\n\n");
 }
 
 

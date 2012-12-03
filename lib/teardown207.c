@@ -559,7 +559,7 @@ int teardown207(int tcp_block_index_in, int initiate_in )
 			return TCP207_ERROR;
 
 	}		
-	printf("EXIT() teardown207 with success\n");
+	printf("=====CLOSED=====\n");
 	return TCP207_SUCCESS;
 
 }

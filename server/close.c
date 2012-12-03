@@ -122,7 +122,7 @@ int main (void)
 		}
 		else
 		{
-			printf ("Success recvfrom() retVal= %d\n",retVal);
+			//printf ("Success recvfrom() retVal= %d\n",retVal);
 			printf ("=====NEW CONNECTION=====\n");
 		}
 		//printf ("tcp_header_extract_from_recv_packet()\n");
@@ -260,7 +260,7 @@ int main (void)
 			}
 
 					
-			/*Send the packet*/
+		/*Send the packet*/
 		retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
 		if(retVal == -1)
 		{
@@ -277,7 +277,7 @@ int main (void)
 
 
 	
-	retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
+		retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
 		if(retVal == -1)
 		{
 			printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
@@ -385,7 +385,6 @@ int main (void)
 
 		case 0://wait for close
 		{
-		
 			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
 			/*Wait for FIN packet*/	
 			retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
@@ -421,7 +420,8 @@ int main (void)
 			}
 
 			/*Now send ACK207*/
-			printf ("@@@@@@@ TCPState=ACK207 packet\n");
+			//printf ("@@@@@@@ TCPState=ACK207 packet\n");
+			print("<<<<<ACK>>>>>\n");
 			aTcpStatePacket = ACK207;
 			retVal = teardown207_tcp_3way_response_header_fill(aIndex, aTcpStatePacket);
 			if(retVal != TCP207_SUCCESS)
@@ -433,78 +433,80 @@ int main (void)
 			sleep(2); //Wait for sometime before sending FIN	
 			/*Send the packet*/
 			retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
-		if(retVal == -1)
-		{
-			printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: sendto() retVal == 0\n");
-		}
-		else
-		{
-			printf ("Success sendto() retVal= %d\n",retVal);
-		}
+
+			if(retVal == -1)
+			{
+				printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
+			}
+			else if(retVal == 0)
+			{
+				printf ("Error: sendto() retVal == 0\n");
+			}
+			else
+			{
+				printf ("Success sendto() retVal= %d\n",retVal);
+			}
+			
+			/*Now send 207teardown*/
+			/* send FIN */
+			/*Call TCP state machine to send FIN*/
+			//printf ("@@@@@@@ TCPState=FIN packet\n");
+			print("<<<<<FIN>>>>>\n");
+			aTcpStatePacket = FIN207;
+			retVal = teardown207_tcp_3way_response_header_fill(aIndex, aTcpStatePacket);
+			if(retVal != TCP207_SUCCESS)
+			{
+				printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
+				return retVal;	
+			}
+
+						
+				/*Send the packet*/
+				retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
+			if(retVal == -1)
+			{
+				printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
+			}
+			else if(retVal == 0)
+			{
+				printf ("Error: sendto() retVal == 0\n");
+			}
+			else
+			{
+				printf ("Success sendto() retVal= %d\n",retVal);
+			}
+
 		
-		/*Now send 207teardown*/
-		/* send FIN */
-		/*Call TCP state machine to send FIN*/
-		printf ("@@@@@@@ TCPState=FIN packet\n");
-		aTcpStatePacket = FIN207;
-		retVal = teardown207_tcp_3way_response_header_fill(aIndex, aTcpStatePacket);
-		if(retVal != TCP207_SUCCESS)
-		{
-			printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
-			return retVal;	
-		}
 
-					
-			/*Send the packet*/
-			retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
-		if(retVal == -1)
-		{
-			printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: sendto() retVal == 0\n");
-		}
-		else
-		{
-			printf ("Success sendto() retVal= %d\n",retVal);
-		}
+			 retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
+			if(retVal == -1)
+			{
+				printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
+			}
+			else if(retVal == 0)
+			{
+				printf ("Error: recvfrom() retVal == 0\n");
 
-	
-
-		 retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
-		if(retVal == -1)
-		{
-			printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: recvfrom() retVal == 0\n");
-
-		}
-		else
-		{
-			printf ("Success recvfrom() retVal= %d\n",retVal);
-		}
-	
-		retVal = tcp_header_extract_from_recv_packet(aIndex, buf);
-		if(retVal != TCP207_SUCCESS)
-		{
-			printf("Error: Returned from teardown207_check_3way_retesponse_packet()\n");
-			return retVal;//SB: Handle retransmission ????
-		}
-		aTcpStatePacket = ACK207;
-		retVal = teardown207_check_3way_response_packet(aIndex,aTcpStatePacket);
-		if(retVal != TCP207_SUCCESS)
-		{
-			printf("Error: Returned from teardown207_check_3way_retesponse_packet()\n");
-			return retVal;//SB: Handle retransmission 
-		}
-		break;
+			}
+			else
+			{
+				printf ("Success recvfrom() retVal= %d\n",retVal);
+			}
+		
+			retVal = tcp_header_extract_from_recv_packet(aIndex, buf);
+			if(retVal != TCP207_SUCCESS)
+			{
+				printf("Error: Returned from teardown207_check_3way_retesponse_packet()\n");
+				return retVal;//SB: Handle retransmission ????
+			}
+			aTcpStatePacket = ACK207;
+			retVal = teardown207_check_3way_response_packet(aIndex,aTcpStatePacket);
+			if(retVal != TCP207_SUCCESS)
+			{
+				printf("Error: Returned from teardown207_check_3way_retesponse_packet()\n");
+				return retVal;//SB: Handle retransmission 
+			}
+			break;
 		}
 		default:
 			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
@@ -515,7 +517,7 @@ int main (void)
 
 #endif	
 
-		printf ("goodbye.\n\n\n\n\n");
+		printf ("=====CLOSED=====\n\n\n\n\n");
  	}
 
 
