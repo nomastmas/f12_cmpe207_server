@@ -96,20 +96,16 @@ int main (void)
 	gTcp_Block[aIndex].pSeq = &aSeq;
 
 	gTcp_Block[aIndex].sockfd_udp = sockfd;
-
+	printf ("== %s %i ==\n", self_addr, SERVER_SOURCE_PORT);
  	printf ("Server Port is : %i, 0x%x \n",SERVER_SOURCE_PORT, SERVER_SOURCE_PORT);
  	printf ("Src Port is : %i, 0x%x \n",gTcp_Block[aIndex].pTcpH->source_port ,gTcp_Block[aIndex].pTcpH->source_port  );
  	printf ("sockfd : %i \n",gTcp_Block[aIndex].sockfd_udp );
 // 	printf ("Dest Port is : %i, 0x%x\n",gTcp_Block[aIndex].pTcpH->dest_port ,gTcp_Block[aIndex].pTcpH->dest_port  );
- 
 
-
-	printf ("...waiting for clients...\n");
 
  	//run forever
  	for(;;){
-		
-		printf ("=====NEW CONNECTION!!!=====\n");
+		printf ("=====LISTENING=====\n");
 		printf ("...waiting for clients...\n");
 
  		//retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
@@ -127,8 +123,8 @@ int main (void)
 		else
 		{
 			printf ("Success recvfrom() retVal= %d\n",retVal);
+			printf ("=====NEW CONNECTION=====\n");
 		}
-
 		printf ("tcp_header_extract_from_recv_packet()\n");
 		retVal = tcp_header_extract_from_recv_packet(aIndex, buf);
 		if(retVal != 0)
