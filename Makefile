@@ -10,6 +10,9 @@ SHRE_CONNECT207:
 TEARDOWN207:
 	gcc -ggdb3 -o ./bin/teardown207 -I./lib/ ./client/client_shre_shut.c ./lib/207layer.c ./lib/teardown207.c ./lib/connect207.c
 
+SHUT207:
+	gcc -ggdb3 -o ./bin/shut207 -I./lib/ ./server/close.c ./lib/207layer.c ./lib/teardown207.c ./lib/connect207.c
+
 
 clean:
 	rm -rf bin/*

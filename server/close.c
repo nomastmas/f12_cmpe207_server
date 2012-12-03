@@ -95,18 +95,22 @@ int main (void)
 	
 	gTcp_Block[aIndex].pSeq = &aSeq;
 
-	gTcp_Block[aIndex].sockfd = sockfd;
+	gTcp_Block[aIndex].sockfd_udp = sockfd;
 
  	printf ("Server Port is : %i, 0x%x \n",SERVER_SOURCE_PORT, SERVER_SOURCE_PORT);
  	printf ("Src Port is : %i, 0x%x \n",gTcp_Block[aIndex].pTcpH->source_port ,gTcp_Block[aIndex].pTcpH->source_port  );
- 	printf ("sockfd : %i \n",gTcp_Block[aIndex].sockfd  );
+ 	printf ("sockfd : %i \n",gTcp_Block[aIndex].sockfd_udp );
 // 	printf ("Dest Port is : %i, 0x%x\n",gTcp_Block[aIndex].pTcpH->dest_port ,gTcp_Block[aIndex].pTcpH->dest_port  );
- 	printf ("...waiting for clients...\n");
+ 
 
+
+	printf ("...waiting for clients...\n");
 
  	//run forever
- 	//for(;;)
-	//{
+ 	for(;;){
+		
+		printf ("=====NEW CONNECTION!!!=====\n");
+		printf ("...waiting for clients...\n");
 
  		//retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_client, &slen);
  		retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
@@ -522,10 +526,8 @@ int main (void)
 
 #endif	
 
-		
-	printf ("goodbye.\n");
-
-
+		printf ("goodbye.\n\n\n\n\n");
+ 	}
 
 
  	close (sockfd);
