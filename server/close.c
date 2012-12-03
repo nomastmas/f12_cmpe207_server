@@ -210,7 +210,7 @@ int main (void)
 			printf("Error: Returned from connect207_check_3way_response_packet()\n");
 			return retVal;
 		}
-
+		printf("=====ESTABLISHED=====\n");
  	//}
 	//printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
 	//scanf("%d", &aInitiateTeardown);
@@ -421,7 +421,7 @@ int main (void)
 
 			/*Now send ACK207*/
 			//printf ("@@@@@@@ TCPState=ACK207 packet\n");
-			print("<<<<<ACK>>>>>\n");
+			printf("<<<<<ACK>>>>>\n");
 			aTcpStatePacket = ACK207;
 			retVal = teardown207_tcp_3way_response_header_fill(aIndex, aTcpStatePacket);
 			if(retVal != TCP207_SUCCESS)
@@ -451,7 +451,7 @@ int main (void)
 			/* send FIN */
 			/*Call TCP state machine to send FIN*/
 			//printf ("@@@@@@@ TCPState=FIN packet\n");
-			print("<<<<<FIN>>>>>\n");
+			printf("<<<<<FIN>>>>>\n");
 			aTcpStatePacket = FIN207;
 			retVal = teardown207_tcp_3way_response_header_fill(aIndex, aTcpStatePacket);
 			if(retVal != TCP207_SUCCESS)
