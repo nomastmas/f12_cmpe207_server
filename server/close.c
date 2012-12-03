@@ -21,7 +21,7 @@
 struct myTcpBlock gTcp_Block[10];
 
 #define MAX		512
-#define SERVER_SOURCE_PORT 	9999
+#define SERVER_SOURCE_PORT 	33333
 
 #if 1
 struct t_data{
