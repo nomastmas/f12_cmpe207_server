@@ -63,13 +63,13 @@ int calculate_checksum(unsigned short* pBuffer_in, int buffer_size_in, unsigned 
 int connect207_check_3way_response_packet(int tcp_block_index_in, int tcp_state_in )
 {
 	
-	printf("%s: %d: Enter\n",__FUNCTION__,__LINE__);
+	//printf("%s: %d: Enter\n",__FUNCTION__,__LINE__);
 	switch(tcp_state_in)
 	{
 		/*Check whether received packet is SYN packet*/	
 		case SYN_SENT://CONNECT207_SYN:
 		{	
-			printf("%s: %d\n",__FUNCTION__,__LINE__);
+			//printf("%s: %d\n",__FUNCTION__,__LINE__);
 			/*No need to check Seq Num, NS flag, CWR flag,ECE flag, Urg Flag, Psh flag, Rst flag */
 			
 			/*for Ack Num*/
@@ -78,25 +78,18 @@ int connect207_check_3way_response_packet(int tcp_block_index_in, int tcp_state_
 				printf("connect207_check_3way_response_packet(): Not SYN cause ACK num=%x\n",gTcp_Block[tcp_block_index_in].pTcpH->ack_num );
 				return TCP207_CONNECT_ERROR_WRONG_3WAY_RESPONSE;
 			}
-
-
 			if(gTcp_Block[tcp_block_index_in].pTcpH->ack_flag != 0x00) //Note that for the first SYN in 3-way handshake the Ack flag should be 0x0. 
 			{
 				printf("connect207_check_3way_response_packet(): Not SYN cause ACK flag=%x\n",gTcp_Block[tcp_block_index_in].pTcpH->ack_flag );
 				return TCP207_CONNECT_ERROR_WRONG_3WAY_RESPONSE;
-
 			}	
-			
-
 			//Syn Flag
 			if(gTcp_Block[tcp_block_index_in].pTcpH->syn_flag != 0x1)
 			{
 				printf("connect207_check_3way_response_packet(): Not SYN cause SYN flag=%x\n",gTcp_Block[tcp_block_index_in].pTcpH->syn_flag );
 				return TCP207_CONNECT_ERROR_WRONG_3WAY_RESPONSE;
-
 			}
-
-			printf("@@@@@@ ITS a SYN PACKET ALRIGHT!!!\n");
+			printf(">>>>>SYN<<<<<\n");
 			break;
 		}
 		
@@ -127,7 +120,7 @@ int connect207_check_3way_response_packet(int tcp_block_index_in, int tcp_state_
 				return TCP207_CONNECT_ERROR_WRONG_3WAY_RESPONSE;
 
 			}
-			printf("@@@@@@@@ ITS a SYNACK PACKET ALRIGHT!!!\n");
+			printf(">>>>>SYN+ACK<<<<<\n");
 			break;
 
 	
@@ -156,7 +149,7 @@ int connect207_check_3way_response_packet(int tcp_block_index_in, int tcp_state_
 				return TCP207_CONNECT_ERROR_WRONG_3WAY_RESPONSE;
 
 			}
-			printf("@@@@@@@@ ITS a ACK PACKET ALRIGHT!!!\n");
+			printf(">>>>>ACK<<<<<\n");
 
 			break;
 				
@@ -198,7 +191,6 @@ int connect207_tcp_3way_response_header_fill(int tcp_block_index_in, int tcp_sta
 	printf ("SYN_SENT=%d,SYN_RCVD=%d,ESTABLISHED=%d \n", SYN_SENT, SYN_RCVD,ESTABLISHED);
 	switch(tcp_state_in)
 	{
-		
 		case SYN_SENT: //CONNECT207_SYN:
 		{	
 
@@ -519,7 +511,7 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	unsigned short tmp16=0;
 	unsigned int tmp32=0;
 		
-		printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
+	//printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
 	/*Check for error*/			
 	if(pBuffer_in == NULL)
 	{
@@ -554,16 +546,16 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 
 #endif
 
-	for(i=0;i<20;i++)
-	{
-		printf("%dbyte 0x%x,%u: ",i,pBuffer_in[i],pBuffer_in[i]);
-	}
-	printf("\n");
+	//for(i=0;i<20;i++)
+	//{
+	//	printf("%dbyte 0x%x,%u: ",i,pBuffer_in[i],pBuffer_in[i]);
+	//}
+	//printf("\n");
 
 	/*Populate TCP header in TCB*/
 //	gTcp_Block[tcp_block_index_in].pTcpH  = (struct packet_header *) pBuffer_in;
 	tmp16 = (pBuffer_in[0] << 8) | (pBuffer_in[1]);
-		printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
+	//printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, tcp_block_index_in);
 	gTcp_Block[tcp_block_index_in].pTcpH->source_port = ntohs(tmp16);
 	
 	tmp16 = 0;
@@ -573,7 +565,7 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	tmp32 = 0; tmp32 = ((pBuffer_in[4]&0xff) << 24) | ((pBuffer_in[5]&0xff) << 16) | ((pBuffer_in[6]&0xff) <<8) | (pBuffer_in[7]&0xff);
 	gTcp_Block[tcp_block_index_in].pTcpH->seq_num = htonl(tmp32);
 	
-	printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
+	//printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 
 	
 	tmp32 = 0; tmp32 = ((pBuffer_in[8]&0xff)<<24) | ((pBuffer_in[9]&0xff) <<16) | ((pBuffer_in[10]&0xff) <<8) | (pBuffer_in[11]&0xff);
@@ -589,7 +581,7 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	gTcp_Block[tcp_block_index_in].pTcpH->reserved = (pBuffer_in[13] & 0x06) >> 1;
 #else //SB: CHECK ??????
 	tmp32 = ((pBuffer_in[12]&0xff) << 24) | ((pBuffer_in[13]&0xff) << 16) | ((pBuffer_in[14]&0xff) <<8) | (pBuffer_in[15]&0xff);
-	printf("$$$$$$$$$$$$$$$$0x%x\n",tmp32);
+	//printf("$$$$$$$$$$$$$$$$0x%x\n",tmp32);
 	//gTcp_Block[tcp_block_index_in].pTcpH->data_offset = ((ntohl(tmp32))&0xff000000) >>24;
 	gTcp_Block[tcp_block_index_in].pTcpH->data_offset = (((tmp32))&0xff000000) >>24;
 	
@@ -616,17 +608,17 @@ int tcp_header_extract_from_recv_packet(int tcp_block_index_in, char * pBuffer_i
 	tmp16 = 0; tmp16 = ((pBuffer_in[18]&0xff)<<8) | (pBuffer_in[19]&0xff);
 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr =  htons(tmp16);
 	
-		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
+	//printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 	/*Fill the sequence number values in the TCB */
 	gTcp_Block[tcp_block_index_in].pSeq->recvd_prev_seq_number = gTcp_Block[tcp_block_index_in].pSeq->recvd_current_seq_number;
 	gTcp_Block[tcp_block_index_in].pSeq->recvd_current_seq_number = gTcp_Block[tcp_block_index_in].pTcpH->seq_num;
 
-		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
+	//printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 
 #if 1 //For testing and debug
 
 		connect207_print_tcp_header(tcp_block_index_in);
-		printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
+	//printf("%s:%s: %d\n",__FILE__,__FUNCTION__,__LINE__);
 #endif
 	return TCP207_SUCCESS;
 
@@ -653,10 +645,6 @@ void connect207_print_tcp_header(int tcp_block_index_in)
 	printf("Window Size\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->window_size, 	gTcp_Block[tcp_block_index_in].pTcpH->window_size);
 	printf("Checksum\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->checksum, 	gTcp_Block[tcp_block_index_in].pTcpH->checksum);
 	printf("Urgent Ptr\t\t%u,0x%x\n", 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr, 	gTcp_Block[tcp_block_index_in].pTcpH->urg_ptr);
-
-
-
-
 }
 
 

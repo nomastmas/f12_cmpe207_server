@@ -25,13 +25,13 @@ enum FLAGS {CLOSED, LISTEN, SYN_RCVD, SYN_SENT, ESTABLISHED, FIN_WAIT_1, CLOSE_W
 int teardown207_check_3way_response_packet(int tcp_block_index_in, int tcp_state_in )
 {
 	
-	printf("%s: %d: Enter\n",__FUNCTION__,__LINE__);
+	//printf("%s: %d: Enter\n",__FUNCTION__,__LINE__);
 	switch(tcp_state_in)
 	{
 		/*Check whether received packet is SYN packet*/	
 		case FIN207://TEARDOWN207_FIN:
 		{	
-			printf("%s: %d: FIN207\n",__FUNCTION__,__LINE__);
+			//printf("%s: %d: FIN207\n",__FUNCTION__,__LINE__);
 			/*No need to check S flag, CWR flag,ECE flag, Urg Flag, Psh flag, Rst flag */
 			
 			/*for Ack Num*/
@@ -59,7 +59,7 @@ int teardown207_check_3way_response_packet(int tcp_block_index_in, int tcp_state
 
 			}
 
-			printf("@@@@@@ ITS a FIN PACKET ALRIGHT!!!\n");
+			printf(">>>>>FIN<<<<<\n");
 			break;
 		}
 		
@@ -96,7 +96,7 @@ int teardown207_check_3way_response_packet(int tcp_block_index_in, int tcp_state
 
 			}
 
-			printf("@@@@@@@@ ITS a ACK PACKET ALRIGHT!!!\n");
+			printf(">>>>>ACK<<<<<\n");
 
 			break;
 				
@@ -227,9 +227,7 @@ int teardown207_tcp_3way_response_header_fill(int tcp_block_index_in, int tcp_st
 			//Fin Flag
 			gTcp_Block[tcp_block_index_in].pTcpH->fin_flag = 0x0; // Not Set
 
-			break;
-
-				
+			break;				
 		}
 		default:
 		{
@@ -433,7 +431,7 @@ int teardown207(int tcp_block_index_in, int initiate_in )
 		case 0://wait for close
 		{
 		
-			printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
+			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
 			/*Waait for FIN packet*/	
 			retVal = recvfrom (gTcp_Block[tcp_block_index_in].sockfd_udp, buf, MAX_BUF_SIZE, 0, (struct sockaddr*)(gTcp_Block[ tcp_block_index_in].pSocket_info), &slen); //SB: Handle retarnsmission by using timeout
 			if(retVal == -1)
@@ -556,7 +554,7 @@ int teardown207(int tcp_block_index_in, int initiate_in )
 			break;
 		}
 		default:
-			printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
+			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
 			printf("DEFAULT ERROR\n");
 			return TCP207_ERROR;
 

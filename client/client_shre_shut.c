@@ -1,6 +1,6 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -113,13 +113,15 @@ int main(int argc, char *argv[] )
 
 	printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, aIndex);
 	
-	printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
-	scanf("%d", &aInitiateTeardown);
+	//printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
+	//scanf("%d", &aInitiateTeardown);
+	aInitiateTeardown = 1;
 	if(aInitiateTeardown)
 		printf("Initate Teardown\n");
 	else
 		printf("Wait for teardown signal\n");
-		
+	
+	sleep(1);	
 	retVal= teardown207(aIndex, aInitiateTeardown);
 	if(retVal != TCP207_SUCCESS)
 	{
