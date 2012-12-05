@@ -214,6 +214,9 @@ int main (void)
  	//}
 	//printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
 	//scanf("%d", &aInitiateTeardown);
+		//int recv_207(int socket, char *rcv_buffer, size_t buffer_length, int flags);
+		retVal = recv_207(sockfd, buf, MAX, 0);
+		printf(">>>>>%s<<<<<", buf);
 	aInitiateTeardown = 0;
 	if(aInitiateTeardown)
 		printf("Initate Teardown\n");

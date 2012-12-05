@@ -88,7 +88,7 @@ int main(int argc, char *argv[] )
 		printf("connect207() returned with error\n");
 		return -1;
 	}
-	
+	// connection established
 
 #if 1 /*For connect207() testing*/
 	//memset(&(gTcp_Block[aIndex]), 0, sizeof(myTcpBlock));
@@ -110,7 +110,9 @@ int main(int argc, char *argv[] )
 
 #endif
 
-
+	//int send_207(int socket, char *snd_buffer, size_t buffer_length, int flags);
+	sprintf(buf, "hello world\n");
+	retVal = send_207(sockfd, buf, MAX, 0);
 	printf("%s:%s: %d: tcp_block_index_in =%d\n",__FILE__,__FUNCTION__,__LINE__, aIndex);
 	
 	//printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
