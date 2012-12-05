@@ -160,4 +160,6 @@ cmpe207_accept
 */
 extern int cmpe207_accept(int sockfd, struct sockaddr_in *addr, socklen_t * addrlen);
 
+void send207(int sockfd, const void *buf);
+
 #endif 
