@@ -23,7 +23,6 @@ struct myTcpBlock gTcp_Block[10];
 #define MAX		512
 #define SERVER_SOURCE_PORT 	33333
 
-#if 1
 struct t_data{
 	int fd;
 	char* buffer;
@@ -31,7 +30,7 @@ struct t_data{
 	int slen;
 	int ret;
 };
-#endif
+
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
 
@@ -219,30 +218,7 @@ int main (void)
 		printf("Initate Teardown\n");
 	else
 		printf("\n\n\n\n=====TEARDOWN=====\n");
-	
-#if 0 //remove later
-	gTcp_Block[aIndex].pSocket_info = &aSocketInfo;
-	gTcp_Block[aIndex].pSocket_info->sin_family = s_server.sin_family; 
-	gTcp_Block[aIndex].pSocket_info->sin_addr.s_addr = s_server.sin_addr.s_addr;
-	gTcp_Block[aIndex].pSocket_info->sin_port = ntohs(s_server.sin_port);
-	
-	gTcp_Block[aIndex].pTcpH = &aTcpH;
-	gTcp_Block[aIndex].pTcpH->source_port = SERVER_SOURCE_PORT;
-	gTcp_Block[aIndex].pTcpH->dest_port = 9999;
-	//gTcp_Block[aIndex].pTcpH->dest_port = ; //Client port
-	
-	gTcp_Block[aIndex].pSeq = &aSeq;
 
-	gTcp_Block[aIndex].sockfd = sockfd;
-
-	retVal= teardown207(aIndex, aInitiateTeardown);
-	if(retVal != TCP207_SUCCESS)
-	{
-		printf("teardown207() returned with error\n");
-		return -1;
-	}
-#else
-/*4 way handshake teardown procedure begins*/
 	switch (aInitiateTeardown)
 	{
 		case 1://Initiate shutdown
