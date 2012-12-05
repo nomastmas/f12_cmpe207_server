@@ -42,6 +42,8 @@ struct myTcpBlock
 	struct sequence *pSeq;
 	int tcp_current_state;
 	int tcp_prev_state;
+	int window_size; //-->added
+	unsigned short	client_port; //-->added (should be filled in at receipt of SYN, now being filled upon receipt)
 
 };
 
@@ -159,5 +161,6 @@ cmpe207_accept
 	Returns:	- socket
 */
 extern int cmpe207_accept(int sockfd, struct sockaddr_in *addr, socklen_t * addrlen);
-
+int recv_207(int socket, char *rcv_buffer, size_t buffer_length, int flags);
+int send_207(int socket, char *snd_buffer, size_t buffer_length, int flags);
 #endif 
