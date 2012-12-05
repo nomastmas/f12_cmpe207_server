@@ -15,7 +15,6 @@
 
 #define APP_BUF_MAX 8192
 
-
 //typedef union {
 //    char full_20_byte[20]; 
     // assuming little endian other byte order is swapped
@@ -189,6 +188,7 @@ int main (int argc, char *argv[]){
 	print_header(header);
 	printf("\n");
 
+//this is here because of the extra loop
    num_bytes_received = recvfrom(sockfd, segment, 1024, 0, (struct sockaddr *) &server_address, &saddr_len);
 	printf("#0 received %d bytes...\n", num_bytes_received);
 	print_header(header);
@@ -196,7 +196,7 @@ int main (int argc, char *argv[]){
 //----------------------------------------------------------
 //                     OPEN the Test File
 //----------------------------------------------------------
-
+/*
 	char app_buffer[APP_BUF_MAX + 1];
 	int elements_read;
 	FILE *fp = fopen("test.txt", "r");
@@ -212,27 +212,31 @@ int main (int argc, char *argv[]){
 	}
 
 	printf("opened file; size of the file to send: %d\n", strlen(app_buffer));
+*/
+
 //----------------------------------------------------------
 //                     Get Ready to Send
 //----------------------------------------------------------
 
 	char send_buffer[536];
+	strcpy(send_buffer, "This is a test!"); //this is the message being sent
 
 	int i = 0;
 	int index = 0;
-	int elements_left = elements_read;
+//	int elements_left = elements_read;
 	int count = 1;
 
 //	int return_value;
-	if (elements_read > 536) {
-		while(index < elements_read) {
-			printf("\nelements left to send: %d\n", elements_left);
-			strncpy(send_buffer, &app_buffer[index], min(elements_left, 536));
+//	if (elements_read > 536) {
+//		while(index < elements_read) {
+//			printf("\nelements left to send: %d\n", elements_left);
+//			strncpy(send_buffer, &app_buffer[index], min(elements_left, 536));
 
 //----------------------------------------------------------
 //          Initialize Header before Sending Data
 //----------------------------------------------------------
 
+//need to send from a real client as this is made up (somewhat)
 			header->dest_port 	= header->source_port;
 			header->source_port 	= 2222;
 			header->seq_num 		= 1001;
@@ -252,18 +256,19 @@ int main (int argc, char *argv[]){
 			header->checksum 		= 0;
 			header->urg_ptr 		= 0;
 
-
 			printf("data send %d\n", count);
 			printf("sending %d bytes with header:\n", strlen(send_buffer));
-			int return_value = send_207(3, send_buffer, strlen(send_buffer), 0); 
+			printf("send buffer:\n%s", send_buffer);
+			printf("\n\n");
+
+//			printf("string length of send buffer: %d\n", strlen(send_buffer));
+
+			int return_value = send_207(3, send_buffer, strlen(send_buffer) + 1, 0); 
 			printf("sent %d bytes...\n", return_value);
 			count++;
 
-			header->seq_num = header->seq_num + return_value;
-			elements_left = elements_left - 536;
-			index = index + 536;
-		}
-	}
+//			header->seq_num = header->seq_num + return_value;
+
 
    num_bytes_received = recvfrom(sockfd, segment, 1024, 0, (struct sockaddr *) &server_address, &saddr_len);
 	printf("#1 received %d bytes...\n", num_bytes_received);
@@ -316,14 +321,14 @@ int send_207(int sockfd, const unsigned char *buffer, uint32_t buffer_size, int 
 	int socket = server_tcb[index].sd;
 	char *payload;
 	payload = &segment[sizeof (struct tcp_header)];
-	strcpy(payload, buffer);
+	strcpy(payload, buffer); //use memcpy 
 
 	print_header(header);
 	printf("\n");
 
 	struct sockaddr_in dest = server_tcb[index].dest_addr;
 	socklen_t dest_len = sizeof(dest);
-	int rv = sendto(sockfd, segment, sizeof(segment), flags, (struct sockaddr *) &dest, sizeof(dest));
+	int rv = sendto(sockfd, segment, 20 + strlen(payload) + 1, flags, (struct sockaddr *) &dest, sizeof(dest));
 
 	zero_header(header);
 

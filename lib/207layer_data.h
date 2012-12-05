@@ -32,10 +32,11 @@ struct myTcpBlock
 
 	int sock_in_use; 	// socket in use = 1; ready = 0;
 	int sockfd_udp; 	//tracks udp sockets
-	unsigned short  cmpe207_port;     //htons(3490), 207 port #
-
-	int queue_size;
+	unsigned short cmpe207_port;     //htons(3490), 207 port #
+	unsigned short	client_port; //-->added
 	
+	int queue_size;
+
 	struct sockaddr_in *pSocket_info;
 	struct packet_header *pTcpH;
 	struct packet_header *pSentTcpH;
@@ -43,7 +44,6 @@ struct myTcpBlock
 	int tcp_current_state;
 	int tcp_prev_state;
 	int window_size; //-->added
-	struct sockaddr_in client_address; //-->added
 
 };
 
