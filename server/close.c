@@ -23,13 +23,13 @@ struct myTcpBlock gTcp_Block[10];
 #define MAX		512
 #define SERVER_SOURCE_PORT 	33333
 
-struct t_data{
+typedef struct{
 	int fd;
 	char* buffer;
 	struct sockaddr_in* client;
 	int slen;
 	int ret;
-};
+}t_data;
 
 void get_self_ip (char* addressBuffer);
 void* rw (void * data);
@@ -43,7 +43,7 @@ int main (void)
 	struct sockaddr_in s_server;
 	int sockfd, ret, slen, t_good;
 	char buf[MAX]={0};
-	struct t_data rw_data;
+	t_data rw_data;
 	pthread_t t_id;
 	char self_addr[INET_ADDRSTRLEN];
 	int retVal=0;
@@ -55,7 +55,7 @@ int main (void)
 	char msg[] = "server";
 	int aInitiateTeardown = 1; 
 	int initiate_in = 0;
-	int aTcpStatePacket = 0;
+	
 	
 	printf ("...booting up server...\n");
 	//slen = sizeof(s_client);
@@ -210,19 +210,76 @@ int main (void)
 			return retVal;
 		}
 		printf("=====ESTABLISHED=====\n");
- 	//}
-	//printf("%s:%s: %d: Press 1 to Initiate teardown and 0 to wait for teardow signal\n",__FILE__,__FUNCTION__,__LINE__);
-	//scanf("%d", &aInitiateTeardown);
-	aInitiateTeardown = 0;
-	if(aInitiateTeardown)
-		printf("Initate Teardown\n");
-	else
-		printf("\n\n\n\n=====TEARDOWN=====\n");
 
-	switch (aInitiateTeardown)
-	{
-		case 1://Initiate shutdown
-		{
+
+		
+ 	} // main for loop
+
+
+ 	close (sockfd);
+	//pthread_exit(NULL);
+ 	return 0;
+
+}
+
+void get_self_ip (char* addressBuffer){
+	struct ifaddrs * ifAddrStruct = NULL;
+    struct ifaddrs * ifa  		  = NULL;
+    void * tmpAddrPtr 			  = NULL;
+    //char addressBuffer[INET_ADDRSTRLEN];
+
+    getifaddrs(&ifAddrStruct);
+
+    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa ->ifa_addr->sa_family==AF_INET) { 
+        	// only IPv4 address
+            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+
+            if (strcmp(ifa->ifa_name, "en0") == 0 
+            	|| strcmp(ifa->ifa_name, "eth0") == 0){
+                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);    
+            	//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);     
+            }  
+        } 
+    }
+    if (ifAddrStruct!=NULL) 
+    	freeifaddrs(ifAddrStruct);
+}
+
+void *rw(void * data){
+	
+	t_data* rw_data = (t_data*) data;
+	int sockfd = rw_data->fd;
+	int slen = rw_data->slen;
+	int port, ret;
+	char* buf = rw_data->buffer;
+	struct sockaddr_in* s_client = rw_data->client;
+	char ip_addr[INET_ADDRSTRLEN];
+	
+	inet_ntop (AF_INET, &(s_client->sin_addr), ip_addr, INET_ADDRSTRLEN);
+	port = ntohs (s_client->sin_port);
+
+	printf ("==Received packet from %s:%d==\n %s\n", 
+			ip_addr,
+			port, 
+			buf
+	);
+	
+	ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)s_client, slen);
+	//	check_for_error (ret, "sendto()");
+}
+
+void *handle_client(void *t_data){
+	int aTcpStatePacket = 0;
+	int retVal = 0;
+	int	aIndex = 0;
+
+	printf("\n\n\n\n=====TEARDOWN=====\n");
+
+	// always wait for teardown for demo purposes
+	switch (0) {
+		case 1:{
+			// initiate shutdown
 			/* send FIN */
 			/*Call TCP state machine to send FIN*/
 			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
@@ -233,46 +290,36 @@ int main (void)
 			{
 				printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
 				return retVal;	
+			}			
+			/*Send the packet*/
+			retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
+			if(retVal == -1)
+			{
+				printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
 			}
+			else if(retVal == 0)
+			{
+				printf ("Error: sendto() retVal == 0\n");
+			}
+			else
+			{
+				printf ("Success sendto() retVal= %d\n",retVal);
+			}
+			retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
+			if(retVal == -1)
+			{
+				printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
+				
+			}
+			else if(retVal == 0)
+			{
+				printf ("Error: recvfrom() retVal == 0\n");
 
-					
-		/*Send the packet*/
-		retVal = sendto (sockfd, gTcp_Block[aIndex].pTcpH , sizeof(struct packet_header), 0, (struct sockaddr*)&s_server, sizeof(struct sockaddr_in));
-		if(retVal == -1)
-		{
-			printf ("Error: sendto() retVal == -1 %s\n",strerror(errno));
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: sendto() retVal == 0\n");
-		}
-		else
-		{
-			printf ("Success sendto() retVal= %d\n",retVal);
-		}
-
-
-	
-		retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
-		if(retVal == -1)
-		{
-			printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
-			
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: recvfrom() retVal == 0\n");
-
-		}
-		else
-		{
-			printf ("Success recvfrom() retVal= %d\n",retVal);
-		}
-
-
-
-
-	
+			}
+			else
+			{
+				printf ("Success recvfrom() retVal= %d\n",retVal);
+			}
 			retVal = tcp_header_extract_from_recv_packet(aIndex, buf);
 			if(retVal != TCP207_SUCCESS)
 			{
@@ -294,21 +341,21 @@ int main (void)
 			//printf("%s:%s:%d:close initiated was complete. Wait for receive \n", __FILE__,__FUNCTION__,__LINE__);	
 		
 
-		retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
-		if(retVal == -1)
-		{
-			printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
-			
-		}
-		else if(retVal == 0)
-		{
-			printf ("Error: recvfrom() retVal == 0\n");
+			retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
+			if(retVal == -1)
+			{
+				printf ("Error: recvfrom() retVal == -1 %s\n",strerror(errno));
+				
+			}
+			else if(retVal == 0)
+			{
+				printf ("Error: recvfrom() retVal == 0\n");
 
-		}
-		else
-		{
-			printf ("Success recvfrom() retVal= %d\n",retVal);
-		}
+			}
+			else
+			{
+				printf ("Success recvfrom() retVal= %d\n",retVal);
+			}
 
 	
 			retVal = tcp_header_extract_from_recv_packet(aIndex, buf);
@@ -353,14 +400,12 @@ int main (void)
 			{
 				printf ("Success sendto() retVal= %d\n",retVal);
 			}
-
-
 			break;		
 			/*Shutdown complete*/	
 		}
 
-		case 0://wait for close
-		{
+		case 0: {
+			//wait for close
 			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
 			/*Wait for FIN packet*/	
 			retVal = recvfrom (sockfd, buf, MAX, 0, (struct sockaddr*)&s_server, &slen);
@@ -488,64 +533,7 @@ int main (void)
 			//printf("%s:%s:%d:\n", __FILE__,__FUNCTION__,__LINE__);	
 			printf("DEFAULT ERROR\n");
 			return TCP207_ERROR;
+	} // end switch
 
-	}
-
-#endif	
-
-		printf ("=====CLOSED=====\n\n\n\n\n");
- 	}
-
-
- 	close (sockfd);
-	//pthread_exit(NULL);
- 	return 0;
-
-}
-
-void get_self_ip (char* addressBuffer){
-	struct ifaddrs * ifAddrStruct = NULL;
-    struct ifaddrs * ifa  		  = NULL;
-    void * tmpAddrPtr 			  = NULL;
-    //char addressBuffer[INET_ADDRSTRLEN];
-
-    getifaddrs(&ifAddrStruct);
-
-    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa ->ifa_addr->sa_family==AF_INET) { 
-        	// only IPv4 address
-            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-
-            if (strcmp(ifa->ifa_name, "en0") == 0 
-            	|| strcmp(ifa->ifa_name, "eth0") == 0){
-                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);    
-            	//printf("%s IP Address %s\n", ifa->ifa_name, addressBuffer);     
-            }  
-        } 
-    }
-    if (ifAddrStruct!=NULL) 
-    	freeifaddrs(ifAddrStruct);
-}
-
-void *rw(void * data){
-	
-	struct t_data* rw_data = (struct t_data*) data;
-	int sockfd = rw_data->fd;
-	int slen = rw_data->slen;
-	int port, ret;
-	char* buf = rw_data->buffer;
-	struct sockaddr_in* s_client = rw_data->client;
-	char ip_addr[INET_ADDRSTRLEN];
-	
-	inet_ntop (AF_INET, &(s_client->sin_addr), ip_addr, INET_ADDRSTRLEN);
-	port = ntohs (s_client->sin_port);
-
-	printf ("==Received packet from %s:%d==\n %s\n", 
-			ip_addr,
-			port, 
-			buf
-	);
-	
-	ret = sendto (sockfd, buf, strlen (buf)+1, 0, (struct sockaddr*)s_client, slen);
-	//	check_for_error (ret, "sendto()");
+	printf ("=====CLOSED=====\n\n\n\n\n");
 }
